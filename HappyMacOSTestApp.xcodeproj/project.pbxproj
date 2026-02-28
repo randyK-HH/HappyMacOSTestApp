@@ -1,0 +1,437 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		C10000010000000000000001 /* HappyMacOSTestAppApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000010000000000000001 /* HappyMacOSTestAppApp.swift */; };
+		C10000020000000000000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000020000000000000002 /* ContentView.swift */; };
+		C10000030000000000000003 /* MacBleShim.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000030000000000000003 /* MacBleShim.swift */; };
+		C10000040000000000000004 /* MacTimeSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000040000000000000004 /* MacTimeSource.swift */; };
+		C10000050000000000000005 /* FlowCollector.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000050000000000000005 /* FlowCollector.swift */; };
+		C10000060000000000000006 /* TestAppViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000060000000000000006 /* TestAppViewModel.swift */; };
+		C10000070000000000000007 /* FrameWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000070000000000000007 /* FrameWriter.swift */; };
+		C10000080000000000000008 /* FwImageReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000080000000000000008 /* FwImageReader.swift */; };
+		C10000090000000000000009 /* MemfaultClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000090000000000000009 /* MemfaultClient.swift */; };
+		C10000100000000000000010 /* ScanPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000100000000000000010 /* ScanPanel.swift */; };
+		C10000110000000000000011 /* RingPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000110000000000000011 /* RingPanel.swift */; };
+		C10000120000000000000012 /* DeviceStatusSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000120000000000000012 /* DeviceStatusSheet.swift */; };
+		C10000130000000000000013 /* DaqConfigSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000130000000000000013 /* DaqConfigSheet.swift */; };
+		C10000140000000000000014 /* DaqConfigureSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000140000000000000014 /* DaqConfigureSheet.swift */; };
+		C10000150000000000000015 /* FwUpdateSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000150000000000000015 /* FwUpdateSection.swift */; };
+		C10000160000000000000016 /* MemfaultReleasesSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000160000000000000016 /* MemfaultReleasesSheet.swift */; };
+		C10000170000000000000017 /* EventLogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000170000000000000017 /* EventLogView.swift */; };
+		C10000180000000000000018 /* FileShareSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000180000000000000018 /* FileShareSheet.swift */; };
+		C10000190000000000000019 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C20000190000000000000019 /* Assets.xcassets */; };
+		C10000200000000000000020 /* HappyPlatformAPI.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = C20000200000000000000020 /* HappyPlatformAPI.xcframework */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		C20000010000000000000001 /* HappyMacOSTestAppApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HappyMacOSTestAppApp.swift; sourceTree = "<group>"; };
+		C20000020000000000000002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		C20000030000000000000003 /* MacBleShim.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacBleShim.swift; sourceTree = "<group>"; };
+		C20000040000000000000004 /* MacTimeSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacTimeSource.swift; sourceTree = "<group>"; };
+		C20000050000000000000005 /* FlowCollector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowCollector.swift; sourceTree = "<group>"; };
+		C20000060000000000000006 /* TestAppViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestAppViewModel.swift; sourceTree = "<group>"; };
+		C20000070000000000000007 /* FrameWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameWriter.swift; sourceTree = "<group>"; };
+		C20000080000000000000008 /* FwImageReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FwImageReader.swift; sourceTree = "<group>"; };
+		C20000090000000000000009 /* MemfaultClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemfaultClient.swift; sourceTree = "<group>"; };
+		C20000100000000000000010 /* ScanPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanPanel.swift; sourceTree = "<group>"; };
+		C20000110000000000000011 /* RingPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RingPanel.swift; sourceTree = "<group>"; };
+		C20000120000000000000012 /* DeviceStatusSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceStatusSheet.swift; sourceTree = "<group>"; };
+		C20000130000000000000013 /* DaqConfigSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaqConfigSheet.swift; sourceTree = "<group>"; };
+		C20000140000000000000014 /* DaqConfigureSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaqConfigureSheet.swift; sourceTree = "<group>"; };
+		C20000150000000000000015 /* FwUpdateSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FwUpdateSection.swift; sourceTree = "<group>"; };
+		C20000160000000000000016 /* MemfaultReleasesSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemfaultReleasesSheet.swift; sourceTree = "<group>"; };
+		C20000170000000000000017 /* EventLogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventLogView.swift; sourceTree = "<group>"; };
+		C20000180000000000000018 /* FileShareSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileShareSheet.swift; sourceTree = "<group>"; };
+		C20000190000000000000019 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		C20000200000000000000020 /* HappyPlatformAPI.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = HappyPlatformAPI.xcframework; path = ../HappyPlatformAPI/shared/build/HappyPlatformAPI.xcframework; sourceTree = "<group>"; };
+		C20000220000000000000022 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		C20000230000000000000023 /* HappyMacOSTestApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = HappyMacOSTestApp.entitlements; sourceTree = "<group>"; };
+		C20000240000000000000024 /* HappyMacOSTestApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HappyMacOSTestApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		C40000010000000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C10000200000000000000020 /* HappyPlatformAPI.xcframework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		C50000010000000000000001 = {
+			isa = PBXGroup;
+			children = (
+				C50000020000000000000002 /* HappyMacOSTestApp */,
+				C50000060000000000000006 /* Frameworks */,
+				C50000070000000000000007 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		C50000020000000000000002 /* HappyMacOSTestApp */ = {
+			isa = PBXGroup;
+			children = (
+				C20000010000000000000001 /* HappyMacOSTestAppApp.swift */,
+				C20000020000000000000002 /* ContentView.swift */,
+				C20000220000000000000022 /* Info.plist */,
+				C20000230000000000000023 /* HappyMacOSTestApp.entitlements */,
+				C20000190000000000000019 /* Assets.xcassets */,
+				C50000030000000000000003 /* Platform */,
+				C50000040000000000000004 /* Model */,
+				C50000050000000000000005 /* Views */,
+			);
+			path = HappyMacOSTestApp;
+			sourceTree = "<group>";
+		};
+		C50000030000000000000003 /* Platform */ = {
+			isa = PBXGroup;
+			children = (
+				C20000030000000000000003 /* MacBleShim.swift */,
+				C20000040000000000000004 /* MacTimeSource.swift */,
+				C20000050000000000000005 /* FlowCollector.swift */,
+			);
+			path = Platform;
+			sourceTree = "<group>";
+		};
+		C50000040000000000000004 /* Model */ = {
+			isa = PBXGroup;
+			children = (
+				C20000060000000000000006 /* TestAppViewModel.swift */,
+				C20000070000000000000007 /* FrameWriter.swift */,
+				C20000080000000000000008 /* FwImageReader.swift */,
+				C20000090000000000000009 /* MemfaultClient.swift */,
+			);
+			path = Model;
+			sourceTree = "<group>";
+		};
+		C50000050000000000000005 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				C20000100000000000000010 /* ScanPanel.swift */,
+				C20000110000000000000011 /* RingPanel.swift */,
+				C20000120000000000000012 /* DeviceStatusSheet.swift */,
+				C20000130000000000000013 /* DaqConfigSheet.swift */,
+				C20000140000000000000014 /* DaqConfigureSheet.swift */,
+				C20000150000000000000015 /* FwUpdateSection.swift */,
+				C20000160000000000000016 /* MemfaultReleasesSheet.swift */,
+				C20000170000000000000017 /* EventLogView.swift */,
+				C20000180000000000000018 /* FileShareSheet.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		C50000060000000000000006 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				C20000200000000000000020 /* HappyPlatformAPI.xcframework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		C50000070000000000000007 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				C20000240000000000000024 /* HappyMacOSTestApp.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		C60000010000000000000001 /* HappyMacOSTestApp */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C80000010000000000000001 /* Build configuration list for PBXNativeTarget "HappyMacOSTestApp" */;
+			buildPhases = (
+				C70000010000000000000001 /* Sources */,
+				C40000010000000000000001 /* Frameworks */,
+				C70000020000000000000002 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = HappyMacOSTestApp;
+			productName = HappyMacOSTestApp;
+			productReference = C20000240000000000000024 /* HappyMacOSTestApp.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		C90000010000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1540;
+				LastUpgradeCheck = 1540;
+				TargetAttributes = {
+					C60000010000000000000001 = {
+						CreatedOnToolsVersion = 15.4;
+					};
+				};
+			};
+			buildConfigurationList = C80000020000000000000002 /* Build configuration list for PBXProject "HappyMacOSTestApp" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = C50000010000000000000001;
+			productRefGroup = C50000070000000000000007 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				C60000010000000000000001 /* HappyMacOSTestApp */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		C70000020000000000000002 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C10000190000000000000019 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		C70000010000000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C10000010000000000000001 /* HappyMacOSTestAppApp.swift in Sources */,
+				C10000020000000000000002 /* ContentView.swift in Sources */,
+				C10000030000000000000003 /* MacBleShim.swift in Sources */,
+				C10000040000000000000004 /* MacTimeSource.swift in Sources */,
+				C10000050000000000000005 /* FlowCollector.swift in Sources */,
+				C10000060000000000000006 /* TestAppViewModel.swift in Sources */,
+				C10000070000000000000007 /* FrameWriter.swift in Sources */,
+				C10000080000000000000008 /* FwImageReader.swift in Sources */,
+				C10000090000000000000009 /* MemfaultClient.swift in Sources */,
+				C10000100000000000000010 /* ScanPanel.swift in Sources */,
+				C10000110000000000000011 /* RingPanel.swift in Sources */,
+				C10000120000000000000012 /* DeviceStatusSheet.swift in Sources */,
+				C10000130000000000000013 /* DaqConfigSheet.swift in Sources */,
+				C10000140000000000000014 /* DaqConfigureSheet.swift in Sources */,
+				C10000150000000000000015 /* FwUpdateSection.swift in Sources */,
+				C10000160000000000000016 /* MemfaultReleasesSheet.swift in Sources */,
+				C10000170000000000000017 /* EventLogView.swift in Sources */,
+				C10000180000000000000018 /* FileShareSheet.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		D10000010000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		D10000020000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		D20000010000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = HappyMacOSTestApp/HappyMacOSTestApp.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = WD3PM6CF3Z;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/../HappyPlatformAPI/shared/build",
+				);
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = HappyMacOSTestApp/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "HPY macOS Test";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 0.0.1;
+				OTHER_LDFLAGS = "-Wl,-undefined,dynamic_lookup";
+				PRODUCT_BUNDLE_IDENTIFIER = com.happyhealth.macostestapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		D20000020000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = HappyMacOSTestApp/HappyMacOSTestApp.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = WD3PM6CF3Z;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/../HappyPlatformAPI/shared/build",
+				);
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = HappyMacOSTestApp/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "HPY macOS Test";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 0.0.1;
+				OTHER_LDFLAGS = "-Wl,-undefined,dynamic_lookup";
+				PRODUCT_BUNDLE_IDENTIFIER = com.happyhealth.macostestapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		C80000010000000000000001 /* Build configuration list for PBXNativeTarget "HappyMacOSTestApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D20000010000000000000001 /* Debug */,
+				D20000020000000000000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C80000020000000000000002 /* Build configuration list for PBXProject "HappyMacOSTestApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D10000010000000000000001 /* Debug */,
+				D10000020000000000000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = C90000010000000000000001 /* Project object */;
+}

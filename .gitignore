@@ -1,0 +1,9 @@
+# Xcode
+xcuserdata/
+*.xcscmblueprint
+
+# OS
+.DS_Store
+
+# Claude
+.claude/
