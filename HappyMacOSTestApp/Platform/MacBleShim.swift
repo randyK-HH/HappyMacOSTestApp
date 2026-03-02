@@ -291,7 +291,7 @@ final class MacBleShim: NSObject, PlatformBleShim, CBCentralManagerDelegate, CBP
         log.info("[conn\(connId)] L2CAP closed")
     }
 
-    func l2capStreamSend(connId: Int32, psm: Int32, imageBytes: KotlinByteArray, blockSize: Int32, interBlockDelayMs: Int64) {
+    func l2capStreamSend(connId: Int32, psm: Int32, imageBytes: KotlinByteArray, blockSize: Int32, interBlockDelayMs: Int64, drainDelayMs: Int64) {
         l2capReceiveJobs[connId]?.cancel()
 
         let data = imageBytes.toSwiftData()
@@ -343,7 +343,7 @@ final class MacBleShim: NSObject, PlatformBleShim, CBCentralManagerDelegate, CBP
             }
 
             // Allow BLE stack to drain
-            Thread.sleep(forTimeInterval: 0.5)
+            Thread.sleep(forTimeInterval: TimeInterval(drainDelayMs) / 1000.0)
 
             self.callback?.onL2capSendComplete(connId: connId)
         }

@@ -9,6 +9,7 @@ struct RingPanel: View {
     @State private var showDaqConfigSheet = false
     @State private var showDaqConfigureSheet = false
     @State private var showShareSheet = false
+    @State private var showSyncFrameSheet = false
 
     var body: some View {
         let ring = viewModel.connectedRings[connId]
@@ -89,6 +90,16 @@ struct RingPanel: View {
             .sheet(isPresented: $showShareSheet) {
                 FileShareSheet(viewModel: viewModel, deviceId: ring.name)
                     .frame(minWidth: 400, minHeight: 400)
+            }
+            .sheet(isPresented: $showSyncFrameSheet) {
+                SyncFrameSheet(
+                    frameCount: ring.syncFrameCount,
+                    reboots: ring.syncFrameReboots,
+                    onCommit: { fc, rb in
+                        viewModel.setSyncFrame(connId: connId, frameCount: fc, reboots: rb)
+                    }
+                )
+                .frame(minWidth: 300, minHeight: 200)
             }
         } else {
             Text("Ring disconnected")
@@ -255,6 +266,21 @@ struct RingPanel: View {
                     .disabled(!isReady)
                     .opacity(isReady ? 1.0 : 0.4)
             }
+
+            HStack(spacing: 4) {
+                Button("Sync Frame") {
+                    viewModel.getSyncFrame(connId: connId)
+                    showSyncFrameSheet = true
+                }
+                .buttonStyle(CommandButtonStyle())
+                .disabled(!isReady)
+                .opacity(isReady ? 1.0 : 0.4)
+
+                Button("Assert") { viewModel.assertDevice(connId: connId) }
+                    .buttonStyle(CommandButtonStyle())
+                    .disabled(!isReady)
+                    .opacity(isReady ? 1.0 : 0.4)
+            }
         }
     }
 
@@ -389,6 +415,53 @@ struct CommandButtonStyle: ButtonStyle {
             .background(configuration.isPressed ? tint.opacity(0.7) : tint)
             .foregroundColor(.white)
             .cornerRadius(6)
+    }
+}
+
+struct SyncFrameSheet: View {
+    let frameCount: UInt32
+    let reboots: UInt32
+    let onCommit: (UInt32, UInt32) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var frameCountText: String = ""
+    @State private var rebootsText: String = ""
+
+    var body: some View {
+        VStack(spacing: 16) {
+            Text("Sync Frame")
+                .font(.headline)
+
+            Form {
+                TextField("Reboots", text: $rebootsText)
+                TextField("Frame Count", text: $frameCountText)
+            }
+
+            HStack {
+                Button("Clear") {
+                    frameCountText = "0"
+                    rebootsText = "0"
+                }
+
+                Spacer()
+
+                Button("Cancel") { dismiss() }
+                    .keyboardShortcut(.cancelAction)
+
+                Button("Commit") {
+                    let fc = UInt32(frameCountText) ?? 0
+                    let rb = UInt32(rebootsText) ?? 0
+                    onCommit(fc, rb)
+                    dismiss()
+                }
+                .keyboardShortcut(.defaultAction)
+            }
+        }
+        .padding()
+        .onAppear {
+            frameCountText = "\(frameCount)"
+            rebootsText = "\(reboots)"
+        }
     }
 }
 

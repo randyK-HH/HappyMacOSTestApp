@@ -31,6 +31,8 @@ struct ConnectedRingInfo: Identifiable {
     var reconnectRetryCount: Int = 0
     var ringSize: Int = 0
     var ringColor: Int = 0
+    var syncFrameCount: UInt32 = 0
+    var syncFrameReboots: UInt32 = 0
 }
 
 struct LogEntry: Identifiable {
@@ -197,6 +199,21 @@ final class TestAppViewModel: ObservableObject {
         let currentlyOn = ring.fingerDetectionOn ?? false
         let _ = api.setFingerDetection(connId: connId, enable: !currentlyOn)
         updateRing(connId: connId) { $0.fingerDetectionOn = !currentlyOn }
+    }
+
+    func getSyncFrame(connId: Int32) {
+        clearCommandStatus(connId: connId)
+        let _ = api.getSyncFrame(connId: connId)
+    }
+
+    func setSyncFrame(connId: Int32, frameCount: UInt32, reboots: UInt32) {
+        clearCommandStatus(connId: connId)
+        let _ = api.setSyncFrame(connId: connId, frameCount: frameCount, reboots: reboots)
+    }
+
+    func assertDevice(connId: Int32) {
+        clearCommandStatus(connId: connId)
+        let _ = api.assert(connId: connId)
     }
 
     // MARK: - Download
@@ -431,6 +448,14 @@ final class TestAppViewModel: ObservableObject {
             setCommandStatus(connId: e.connId, status: "(\(cmdHex(0x2B))) Success")
             updateRing(connId: e.connId) { $0.daqConfig = e.config }
             addLog(connId: e.connId, message: "DaqConfig: mode=\(e.config.modeString), version=\(e.config.version)")
+        }
+        else if let e = event as? HpyEvent.SyncFrame {
+            setCommandStatus(connId: e.connId, status: "(\(cmdHex(0x1A))) Success")
+            updateRing(connId: e.connId) {
+                $0.syncFrameCount = UInt32(e.frameCount)
+                $0.syncFrameReboots = UInt32(e.reboots)
+            }
+            addLog(connId: e.connId, message: "SyncFrame: boot\(e.reboots):frame\(e.frameCount)")
         }
         else if let e = event as? HpyEvent.CommandResult {
             setCommandStatus(connId: e.connId, status: "(\(cmdHex(Int(e.commandId)))) Success")
