@@ -588,7 +588,7 @@ final class TestAppViewModel: ObservableObject {
         if connId >= 0 {
             var logs = connectionLogs[connId] ?? []
             logs.append(entry)
-            if logs.count > 1000 { logs = Array(logs.suffix(1000)) }
+            if logs.count > 10000 { logs = Array(logs.suffix(10000)) }
             connectionLogs[connId] = logs
         }
     }
