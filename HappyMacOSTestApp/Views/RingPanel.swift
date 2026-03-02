@@ -275,8 +275,9 @@ struct RingPanel: View {
             if isActivelyDownloading {
                 if ring.downloadTotal > 0 {
                     ProgressView(value: Float(ring.downloadProgress), total: Float(ring.downloadTotal))
+                    let sizeKb = ring.downloadProgress * 4  // each frame = 4096 bytes = 4 kB
                     let transportLabel = ring.downloadTransport.isEmpty ? "" : "  (\(ring.downloadTransport))"
-                    Text("\(ring.downloadProgress) / \(ring.downloadTotal) frames\(transportLabel)")
+                    Text("\(ring.downloadProgress) frames (\(sizeKb)kB)\(transportLabel)")
                         .font(.caption)
                 } else {
                     ProgressView()
@@ -285,9 +286,16 @@ struct RingPanel: View {
                         .font(.caption)
                 }
             } else if isWaiting {
-                Text("Waiting for data...")
-                    .font(.caption)
-                    .foregroundColor(.orange)
+                let sizeKb = ring.downloadProgress * 4
+                HStack {
+                    Text("Waiting for data...")
+                        .font(.caption)
+                        .foregroundColor(.orange)
+                    Spacer()
+                    Text("\(ring.downloadProgress) frames (\(sizeKb)kB)")
+                        .font(.caption)
+                        .foregroundColor(.orange)
+                }
             }
 
             if ring.totalFramesDownloaded > 0 && !isDownloading {
