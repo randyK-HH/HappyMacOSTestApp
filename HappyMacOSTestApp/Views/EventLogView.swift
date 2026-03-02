@@ -58,7 +58,7 @@ struct EventLogSection: View {
             }
         }
         .sheet(isPresented: $showShareSheet) {
-            EventLogShareSheet(viewModel: viewModel)
+            EventLogShareSheet(viewModel: viewModel, deviceId: viewModel.connectedRings[connId]?.name)
                 .frame(minWidth: 400, minHeight: 400)
         }
     }
@@ -86,11 +86,12 @@ struct LogEntryRow: View {
 
 struct EventLogShareSheet: View {
     @ObservedObject var viewModel: TestAppViewModel
+    let deviceId: String?
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
-            let files = viewModel.listEventLogFiles()
+            let files = viewModel.listEventLogFiles(deviceId: deviceId)
 
             if files.isEmpty {
                 Text("No saved event logs found.")
@@ -133,7 +134,7 @@ struct EventLogShareSheet: View {
             }
 
             Spacer()
-                .navigationTitle("Event Logs")
+                .navigationTitle("Event Logs\(deviceId.map { " — \($0)" } ?? "")")
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
                         Button("Done") { dismiss() }

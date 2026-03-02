@@ -329,8 +329,8 @@ final class TestAppViewModel: ObservableObject {
             }
     }
 
-    func listEventLogFiles() -> [URL] {
-        let folder = Self.eventLogFolder
+    func listEventLogFiles(deviceId: String? = nil) -> [URL] {
+        let folder = if let deviceId { Self.eventLogFolder.appendingPathComponent(deviceId) } else { Self.eventLogFolder }
         guard FileManager.default.fileExists(atPath: folder.path) else { return [] }
         let files = (try? FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: [.contentModificationDateKey])) ?? []
         return files.filter { $0.pathExtension == "txt" }
@@ -349,7 +349,8 @@ final class TestAppViewModel: ObservableObject {
     func saveEventLog(connId: Int32) -> URL? {
         guard let logs = connectionLogs[connId], !logs.isEmpty else { return nil }
 
-        let folder = Self.eventLogFolder
+        let deviceId = connectedRings[connId]?.name
+        let folder = if let deviceId { Self.eventLogFolder.appendingPathComponent(deviceId) } else { Self.eventLogFolder }
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
 
         let formatter = DateFormatter()

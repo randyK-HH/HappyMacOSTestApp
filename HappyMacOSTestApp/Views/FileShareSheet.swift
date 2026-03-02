@@ -75,7 +75,7 @@ struct FileShareSheet: View {
     }
 
     private var eventLogFilesView: some View {
-        let files = viewModel.listEventLogFiles()
+        let files = viewModel.listEventLogFiles(deviceId: deviceId)
 
         return Group {
             if files.isEmpty {
