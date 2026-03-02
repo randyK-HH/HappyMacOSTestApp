@@ -87,7 +87,7 @@ struct RingPanel: View {
                 }
             }
             .sheet(isPresented: $showShareSheet) {
-                FileShareSheet(viewModel: viewModel)
+                FileShareSheet(viewModel: viewModel, deviceId: ring.name)
                     .frame(minWidth: 400, minHeight: 400)
             }
         } else {

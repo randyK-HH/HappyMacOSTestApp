@@ -2,6 +2,7 @@ import SwiftUI
 
 struct FileShareSheet: View {
     @ObservedObject var viewModel: TestAppViewModel
+    let deviceId: String
     @Environment(\.dismiss) private var dismiss
     @State private var selectedTab = 0
 
@@ -16,7 +17,7 @@ struct FileShareSheet: View {
                     .tabItem { Label("Event Logs", systemImage: "list.bullet.rectangle") }
                     .tag(1)
             }
-            .navigationTitle("Share Files")
+            .navigationTitle("Files — \(deviceId)")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Done") { dismiss() }
@@ -26,7 +27,7 @@ struct FileShareSheet: View {
     }
 
     private var hpy2FilesView: some View {
-        let files = viewModel.listHpy2Files()
+        let files = viewModel.listHpy2Files(deviceId: deviceId)
 
         return Group {
             if files.isEmpty {

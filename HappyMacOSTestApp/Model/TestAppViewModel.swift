@@ -202,8 +202,9 @@ final class TestAppViewModel: ObservableObject {
     // MARK: - Download
 
     func startDownload(connId: Int32) {
+        let deviceId = connectedRings[connId]?.name
         let writer = FrameWriter()
-        writer.ensureFileOpen()
+        writer.ensureFileOpen(deviceId: deviceId)
         frameWriters[connId] = writer
         addLog(connId: connId, message: "HPY2 file: \(writer.filePath ?? "?")")
         let _ = api.startDownload(connId: connId)
@@ -316,8 +317,8 @@ final class TestAppViewModel: ObservableObject {
 
     // MARK: - File Management
 
-    func listHpy2Files() -> [URL] {
-        let folder = FrameWriter.hpy2Folder
+    func listHpy2Files(deviceId: String? = nil) -> [URL] {
+        let folder = if let deviceId { FrameWriter.hpy2Folder(forDevice: deviceId) } else { FrameWriter.hpy2Folder }
         guard FileManager.default.fileExists(atPath: folder.path) else { return [] }
         let files = (try? FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: [.contentModificationDateKey])) ?? []
         return files.filter { $0.pathExtension == "hpy2" }

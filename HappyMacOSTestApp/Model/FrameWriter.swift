@@ -8,6 +8,10 @@ final class FrameWriter {
         return docs.appendingPathComponent("BLE_HPY2_DATA")
     }
 
+    static func hpy2Folder(forDevice deviceId: String) -> URL {
+        return hpy2Folder.appendingPathComponent(deviceId)
+    }
+
     private let queue = DispatchQueue(label: "com.happyhealth.framewriter", qos: .utility)
     private var fileHandle: FileHandle?
     private var outputUrl: URL?
@@ -15,10 +19,10 @@ final class FrameWriter {
 
     var filePath: String? { outputUrl?.path }
 
-    func ensureFileOpen() {
+    func ensureFileOpen(deviceId: String? = nil) {
         guard outputUrl == nil else { return }
 
-        let folder = Self.hpy2Folder
+        let folder = if let deviceId { Self.hpy2Folder(forDevice: deviceId) } else { Self.hpy2Folder }
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
 
         let formatter = DateFormatter()
