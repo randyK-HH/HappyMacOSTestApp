@@ -91,6 +91,7 @@ final class TestAppViewModel: ObservableObject {
 
     // RSSI polling timers (10s interval per connection)
     private var rssiPollingTasks = [Int32: Task<Void, Never>]()
+    private var lastLoggedRssi = [Int32: Int]()
 
     // Status clear timers
     private var statusClearTasks = [Int32: Task<Void, Never>]()
@@ -161,6 +162,7 @@ final class TestAppViewModel: ObservableObject {
 
     func disconnect(connId: Int32) {
         stopRssiPolling(connId: connId)
+        lastLoggedRssi.removeValue(forKey: connId)
         frameWriters.removeValue(forKey: connId)?.destroy()
         let _ = api.disconnect(connId: connId)
         connectedRings.removeValue(forKey: connId)
@@ -613,31 +615,47 @@ final class TestAppViewModel: ObservableObject {
         }
         else if let e = event as? HpyEvent.RssiRead {
             updateRing(connId: e.connId) { $0.lastRssi = Int(e.rssi) }
+            let rssi = Int(e.rssi)
             let action = pendingRssiAction.removeValue(forKey: e.connId)
             if action == "download" {
+                addLog(connId: e.connId, message: "RSSI: \(rssi) dBm")
+                lastLoggedRssi[e.connId] = rssi
                 if e.rssi > Self.MIN_RSSI {
                     proceedStartDownload(connId: e.connId)
                 } else {
                     rssiAlertConnId = e.connId
-                    rssiAlertValue = Int(e.rssi)
+                    rssiAlertValue = rssi
                 }
             } else if action == "fwUpdate" {
+                addLog(connId: e.connId, message: "RSSI: \(rssi) dBm")
+                lastLoggedRssi[e.connId] = rssi
                 if e.rssi > Self.MIN_RSSI {
                     proceedStartFwUpdate(connId: e.connId)
                 } else {
                     rssiAlertConnId = e.connId
-                    rssiAlertValue = Int(e.rssi)
+                    rssiAlertValue = rssi
                 }
             } else {
-                // From library auto-check
+                // From library auto-check or 10s poll
                 let ring = connectedRings[e.connId]
                 if ring?.state == .waiting && e.rssi <= Self.MIN_RSSI {
-                    updateRing(connId: e.connId) { $0.rssiWarningValue = Int(e.rssi) }
+                    updateRing(connId: e.connId) { $0.rssiWarningValue = rssi }
                 } else {
                     updateRing(connId: e.connId) { $0.rssiWarningValue = nil }
                 }
+                let prev = lastLoggedRssi[e.connId]
+                let crossedBelow = prev != nil && prev! > Self.MIN_RSSI && rssi <= Self.MIN_RSSI
+                let crossedAbove = prev != nil && prev! <= Self.MIN_RSSI && rssi > Self.MIN_RSSI
+                let bigDelta = prev == nil || abs(rssi - prev!) > 5
+                if crossedBelow || crossedAbove || bigDelta {
+                    let suffix: String
+                    if crossedBelow { suffix = " (below threshold \(Self.MIN_RSSI) dBm)" }
+                    else if crossedAbove { suffix = " (above threshold \(Self.MIN_RSSI) dBm)" }
+                    else { suffix = "" }
+                    addLog(connId: e.connId, message: "RSSI: \(rssi) dBm\(suffix)")
+                    lastLoggedRssi[e.connId] = rssi
+                }
             }
-            addLog(connId: e.connId, message: "RSSI: \(e.rssi) dBm")
         }
         else if let e = event as? HpyEvent.MemfaultComplete {
             addLog(connId: e.connId, message: "Memfault drain complete: \(e.chunksDownloaded) new chunks")
