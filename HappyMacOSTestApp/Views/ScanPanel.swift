@@ -93,7 +93,7 @@ struct ScanPanel: View {
                         }
                     }
                 }
-                .listStyle(.inset)
+                .listStyle(.sidebar)
                 .scrollContentBackground(.hidden)
             }
         }
