@@ -449,8 +449,17 @@ final class MacBleShim: NSObject, PlatformBleShim, CBCentralManagerDelegate, CBP
 
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
         guard let connId = connIdForPeripheral(peripheral) else { return }
-        guard error == nil, let value = characteristic.value else { return }
         guard let charId = uuidToCharId[characteristic.uuid] else { return }
+
+        if let error = error {
+            if !characteristic.isNotifying {
+                log.warning("[\(connId)] Characteristic read failed: \(charId) error=\(error.localizedDescription)")
+                callback?.onCharacteristicReadFailed(connId: connId, charId: charId)
+            }
+            return
+        }
+
+        guard let value = characteristic.value else { return }
 
         if characteristic.isNotifying {
             callback?.onCharacteristicChanged(connId: connId, charId: charId, value: value.toKotlinByteArray())
