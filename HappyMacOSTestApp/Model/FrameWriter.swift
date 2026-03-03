@@ -25,10 +25,11 @@ final class FrameWriter {
         let folder = if let deviceId { Self.hpy2Folder(forDevice: deviceId) } else { Self.hpy2Folder }
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
 
+        let shortId = (deviceId?.hasPrefix("HH_") == true ? String(deviceId!.dropFirst(3)) : deviceId ?? "unknown").lowercased()
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyyMMdd_HHmmss"
         let timestamp = formatter.string(from: Date())
-        let fileName = "data_\(timestamp).hpy2"
+        let fileName = "hh_\(shortId)_\(timestamp).hpy2"
         let url = folder.appendingPathComponent(fileName)
 
         FileManager.default.createFile(atPath: url.path, contents: nil)

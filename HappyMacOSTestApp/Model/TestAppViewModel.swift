@@ -16,6 +16,10 @@ struct ConnectedRingInfo: Identifiable {
     var isDownloading: Bool = false
     var downloadProgress: Int = 0
     var downloadTotal: Int = 0
+    var downloadProgressOffset: Int = 0
+    var downloadRawProgress: Int = 0
+    var sessionDownloadProgress: Int = 0
+    var sessionDownloadTotal: Int = 0
     var downloadTransport: String = ""
     var totalFramesDownloaded: Int = 0
     var batchStartMs: TimeInterval = 0
@@ -223,6 +227,12 @@ final class TestAppViewModel: ObservableObject {
         let writer = FrameWriter()
         writer.ensureFileOpen(deviceId: deviceId)
         frameWriters[connId] = writer
+        updateRing(connId: connId) {
+            $0.downloadProgress = 0
+            $0.downloadTotal = 0
+            $0.downloadProgressOffset = 0
+            $0.downloadRawProgress = 0
+        }
         addLog(connId: connId, message: "HPY2 file: \(writer.filePath ?? "?")")
         let _ = api.startDownload(connId: connId)
     }
@@ -496,8 +506,16 @@ final class TestAppViewModel: ObservableObject {
         }
         else if let e = event as? HpyEvent.DownloadProgress {
             updateRing(connId: e.connId) {
-                $0.downloadProgress = Int(e.framesDownloaded)
-                $0.downloadTotal = Int(e.framesTotal)
+                let rawProgress = Int(e.framesDownloaded)
+                let offset = rawProgress < $0.downloadRawProgress
+                    ? $0.downloadProgressOffset + $0.downloadRawProgress
+                    : $0.downloadProgressOffset
+                $0.downloadProgress = offset + rawProgress
+                $0.downloadTotal = offset + Int(e.framesTotal)
+                $0.downloadProgressOffset = offset
+                $0.downloadRawProgress = rawProgress
+                $0.sessionDownloadProgress = Int(e.sessionFramesDownloaded)
+                $0.sessionDownloadTotal = Int(e.sessionFramesTotal)
                 $0.downloadTransport = e.transport
             }
             if e.sessionFramesDownloaded % 8 == 0 || e.sessionFramesDownloaded == e.sessionFramesTotal {
@@ -515,6 +533,8 @@ final class TestAppViewModel: ObservableObject {
         }
         else if let e = event as? HpyEvent.DownloadComplete {
             addLog(connId: e.connId, message: "DownloadComplete: \(e.sessionFrames) frames")
+            let cumulative = connectedRings[e.connId]?.downloadProgress ?? 0
+            addLog(connId: e.connId, message: "Cumulative: \(cumulative) frames")
         }
         else if let e = event as? HpyEvent.FwUpdateProgress {
             let fwState = e.bytesWritten < e.totalBytes ? "Uploading" : "Finalizing"

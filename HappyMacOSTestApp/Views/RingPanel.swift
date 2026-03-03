@@ -299,12 +299,19 @@ struct RingPanel: View {
             )
 
             if isActivelyDownloading {
-                if ring.downloadTotal > 0 {
-                    ProgressView(value: Float(ring.downloadProgress), total: Float(ring.downloadTotal))
-                    let sizeKb = ring.downloadProgress * 4  // each frame = 4096 bytes = 4 kB
+                if ring.sessionDownloadTotal > 0 {
+                    ProgressView(value: Float(ring.sessionDownloadProgress), total: Float(ring.sessionDownloadTotal))
+                    let sessionSizeKb = ring.sessionDownloadProgress * 4  // each frame = 4096 bytes = 4 kB
+                    let cumulativeSizeKb = ring.downloadProgress * 4
                     let transportLabel = ring.downloadTransport.isEmpty ? "" : "  (\(ring.downloadTransport))"
-                    Text("\(ring.downloadProgress) frames (\(sizeKb)kB)\(transportLabel)")
-                        .font(.caption)
+                    HStack {
+                        Text("\(ring.sessionDownloadProgress) frames (\(sessionSizeKb)kB)\(transportLabel)")
+                            .font(.caption)
+                        Spacer()
+                        Text("\(ring.downloadProgress) frames (\(cumulativeSizeKb)kB)")
+                            .font(.caption)
+                            .foregroundColor(.orange)
+                    }
                 } else {
                     ProgressView()
                         .controlSize(.small)
