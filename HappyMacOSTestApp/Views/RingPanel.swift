@@ -10,6 +10,7 @@ struct RingPanel: View {
     @State private var showDaqConfigureSheet = false
     @State private var showShareSheet = false
     @State private var showSyncFrameSheet = false
+    @State private var showAssertConfirm = false
 
     var body: some View {
         let ring = viewModel.connectedRings[connId]
@@ -108,6 +109,12 @@ struct RingPanel: View {
                 Button("OK") { viewModel.dismissRssiAlert() }
             } message: {
                 Text("RSSI is \(viewModel.rssiAlertValue) dBm. Move the ring closer and try again.")
+            }
+            .alert("Confirm Assert", isPresented: $showAssertConfirm) {
+                Button("Assert", role: .destructive) { viewModel.assertDevice(connId: connId) }
+                Button("Cancel", role: .cancel) { }
+            } message: {
+                Text("This will trigger a firmware assert on the ring. Continue?")
             }
         } else {
             Text("Ring disconnected")
@@ -285,7 +292,7 @@ struct RingPanel: View {
                 .disabled(!isReady)
                 .opacity(isReady ? 1.0 : 0.4)
 
-                Button("Assert") { viewModel.assertDevice(connId: connId) }
+                Button("Assert") { showAssertConfirm = true }
                     .buttonStyle(CommandButtonStyle())
                     .disabled(!isReady)
                     .opacity(isReady ? 1.0 : 0.4)
