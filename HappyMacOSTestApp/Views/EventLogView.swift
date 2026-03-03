@@ -7,13 +7,17 @@ struct EventLogSection: View {
 
     var body: some View {
         let logs = viewModel.connectionLogs[connId] ?? []
+        let faultCount = logs.filter { $0.message.hasPrefix("ERROR") }.count
+        let title = faultCount == 0 ? "Event Log"
+            : faultCount == 1 ? "Event Log  (1 fault)"
+            : "Event Log  (\(faultCount) faults)"
 
         VStack(alignment: .leading) {
             HStack {
-                Text("Event Log")
+                Text(title)
                     .font(.subheadline)
                     .fontWeight(.bold)
-                    .foregroundColor(.blue)
+                    .foregroundColor(faultCount > 0 ? .red : .blue)
                 Spacer()
                 Button {
                     let _ = viewModel.saveEventLog(connId: connId)
