@@ -89,6 +89,10 @@ final class TestAppViewModel: ObservableObject {
     @Published var rssiAlertConnId: Int32?
     @Published var rssiAlertValue: Int = 0
 
+    // Sync Frame sheet trigger
+    private var pendingSyncFrameRequest = false
+    @Published var showSyncFrameSheet = false
+
     // RSSI polling timers (10s interval per connection)
     private var rssiPollingTasks = [Int32: Task<Void, Never>]()
     private var lastLoggedRssi = [Int32: Int]()
@@ -223,6 +227,7 @@ final class TestAppViewModel: ObservableObject {
 
     func getSyncFrame(connId: Int32) {
         clearCommandStatus(connId: connId)
+        pendingSyncFrameRequest = true
         let _ = api.getSyncFrame(connId: connId)
     }
 
@@ -509,6 +514,10 @@ final class TestAppViewModel: ObservableObject {
             updateRing(connId: e.connId) {
                 $0.syncFrameCount = UInt32(e.frameCount)
                 $0.syncFrameReboots = UInt32(e.reboots)
+            }
+            if pendingSyncFrameRequest {
+                pendingSyncFrameRequest = false
+                showSyncFrameSheet = true
             }
             addLog(connId: e.connId, message: "SyncFrame: boot\(e.reboots):frame\(e.frameCount)")
         }

@@ -9,7 +9,6 @@ struct RingPanel: View {
     @State private var showDaqConfigSheet = false
     @State private var showDaqConfigureSheet = false
     @State private var showShareSheet = false
-    @State private var showSyncFrameSheet = false
     @State private var showAssertConfirm = false
 
     var body: some View {
@@ -92,7 +91,7 @@ struct RingPanel: View {
                 FileShareSheet(viewModel: viewModel, deviceId: ring.name)
                     .frame(minWidth: 400, minHeight: 400)
             }
-            .sheet(isPresented: $showSyncFrameSheet) {
+            .sheet(isPresented: $viewModel.showSyncFrameSheet) {
                 SyncFrameSheet(
                     frameCount: ring.syncFrameCount,
                     reboots: ring.syncFrameReboots,
@@ -286,7 +285,6 @@ struct RingPanel: View {
             HStack(spacing: 4) {
                 Button("Sync Frame") {
                     viewModel.getSyncFrame(connId: connId)
-                    showSyncFrameSheet = true
                 }
                 .buttonStyle(CommandButtonStyle())
                 .disabled(!isReady)
