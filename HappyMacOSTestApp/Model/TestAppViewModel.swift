@@ -78,7 +78,7 @@ final class TestAppViewModel: ObservableObject {
     @Published var memfaultLoading = false
     @Published var memfaultError: String?
     @Published var memfaultHasMore = true
-    @Published var memfaultDownloading = false
+    @Published var memfaultDownloadingConnId: Int32? = nil
     @Published var memfaultDownloadVersion: String?
     private var memfaultNextPage = 1
     private let memfaultClient = MemfaultClient()
@@ -89,9 +89,9 @@ final class TestAppViewModel: ObservableObject {
     @Published var rssiAlertConnId: Int32?
     @Published var rssiAlertValue: Int = 0
 
-    // Sync Frame sheet trigger
-    private var pendingSyncFrameRequest = false
-    @Published var showSyncFrameSheet = false
+    // Sync Frame sheet trigger (per-connection)
+    private var pendingSyncFrameConnId: Int32? = nil
+    @Published var syncFrameSheetConnId: Int32? = nil
 
     // RSSI polling timers (10s interval per connection)
     private var rssiPollingTasks = [Int32: Task<Void, Never>]()
@@ -232,7 +232,7 @@ final class TestAppViewModel: ObservableObject {
 
     func getSyncFrame(connId: Int32) {
         clearCommandStatus(connId: connId)
-        pendingSyncFrameRequest = true
+        pendingSyncFrameConnId = connId
         let _ = api.getSyncFrame(connId: connId)
     }
 
@@ -357,7 +357,7 @@ final class TestAppViewModel: ObservableObject {
     }
 
     func downloadMemfaultRelease(version: String, connId: Int32) {
-        memfaultDownloading = true
+        memfaultDownloadingConnId = connId
         memfaultDownloadVersion = version
         memfaultError = nil
 
@@ -375,7 +375,7 @@ final class TestAppViewModel: ObservableObject {
                 if status != .ok {
                     memfaultError = "Image validation failed: \(status)"
                     addLog(connId: connId, message: "Memfault: validation failed for \(version): \(status)")
-                    memfaultDownloading = false
+                    memfaultDownloadingConnId = nil
                     memfaultDownloadVersion = nil
                     return
                 }
@@ -387,7 +387,7 @@ final class TestAppViewModel: ObservableObject {
                 memfaultError = error.localizedDescription
                 addLog(connId: connId, message: "Memfault: error downloading \(version): \(error.localizedDescription)")
             }
-            memfaultDownloading = false
+            memfaultDownloadingConnId = nil
             memfaultDownloadVersion = nil
         }
     }
@@ -520,9 +520,9 @@ final class TestAppViewModel: ObservableObject {
                 $0.syncFrameCount = UInt32(e.frameCount)
                 $0.syncFrameReboots = UInt32(e.reboots)
             }
-            if pendingSyncFrameRequest {
-                pendingSyncFrameRequest = false
-                showSyncFrameSheet = true
+            if pendingSyncFrameConnId == e.connId {
+                pendingSyncFrameConnId = nil
+                syncFrameSheetConnId = e.connId
             }
             addLog(connId: e.connId, message: "SyncFrame: boot\(e.reboots):frame\(e.frameCount)")
         }

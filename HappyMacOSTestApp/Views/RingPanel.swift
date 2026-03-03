@@ -91,7 +91,10 @@ struct RingPanel: View {
                 FileShareSheet(viewModel: viewModel, deviceId: ring.name)
                     .frame(minWidth: 400, minHeight: 400)
             }
-            .sheet(isPresented: $viewModel.showSyncFrameSheet) {
+            .sheet(isPresented: Binding(
+                get: { viewModel.syncFrameSheetConnId == connId },
+                set: { if !$0 { viewModel.syncFrameSheetConnId = nil } }
+            )) {
                 SyncFrameSheet(
                     frameCount: ring.syncFrameCount,
                     reboots: ring.syncFrameReboots,

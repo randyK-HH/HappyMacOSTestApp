@@ -5,6 +5,10 @@ struct MemfaultReleasesSheet: View {
     @EnvironmentObject var viewModel: TestAppViewModel
     @Environment(\.dismiss) private var dismiss
 
+    private var isDownloading: Bool {
+        viewModel.memfaultDownloadingConnId == connId
+    }
+
     var body: some View {
         NavigationStack {
             Group {
@@ -18,10 +22,10 @@ struct MemfaultReleasesSheet: View {
                 } else {
                     List {
                         ForEach(viewModel.memfaultReleases) { release in
-                            let isThisDownloading = viewModel.memfaultDownloading && viewModel.memfaultDownloadVersion == release.version
+                            let isThisDownloading = isDownloading && viewModel.memfaultDownloadVersion == release.version
 
                             Button {
-                                if !viewModel.memfaultDownloading {
+                                if !isDownloading {
                                     viewModel.downloadMemfaultRelease(version: release.version, connId: connId)
                                 }
                             } label: {
@@ -40,7 +44,7 @@ struct MemfaultReleasesSheet: View {
                                     }
                                 }
                             }
-                            .disabled(viewModel.memfaultDownloading)
+                            .disabled(isDownloading)
                             .onAppear {
                                 // Auto-pagination
                                 if release.id == viewModel.memfaultReleases.last?.id {
@@ -76,11 +80,11 @@ struct MemfaultReleasesSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
-                        .disabled(viewModel.memfaultDownloading)
+                        .disabled(isDownloading)
                 }
             }
             .onChange(of: viewModel.fwImageInfoMap[connId] != nil) { hasImage in
-                if hasImage && !viewModel.memfaultDownloading {
+                if hasImage && !isDownloading {
                     dismiss()
                 }
             }
