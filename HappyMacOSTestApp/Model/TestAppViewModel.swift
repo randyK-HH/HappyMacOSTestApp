@@ -492,7 +492,7 @@ final class TestAppViewModel: ObservableObject {
                 $0.totalFramesDownloaded = Int(e.totalFramesDownloaded)
                 $0.batchStartMs = nowMs
             }
-            addLog(connId: e.connId, message: "DownloadBatch: \(e.framesInBatch) frames, total=\(e.totalFramesDownloaded), CRC=\(e.crcValid), \(throughput)")
+            addLog(connId: e.connId, message: "DownloadBatch: \(e.framesInBatch) frames, CRC=\(e.crcValid), \(throughput)")
         }
         else if let e = event as? HpyEvent.DownloadProgress {
             updateRing(connId: e.connId) {
@@ -500,8 +500,8 @@ final class TestAppViewModel: ObservableObject {
                 $0.downloadTotal = Int(e.framesTotal)
                 $0.downloadTransport = e.transport
             }
-            if e.framesDownloaded % 8 == 0 || e.framesDownloaded == e.framesTotal {
-                addLog(connId: e.connId, message: "DownloadProgress: \(e.framesDownloaded)/\(e.framesTotal) (\(e.transport))")
+            if e.sessionFramesDownloaded % 8 == 0 || e.sessionFramesDownloaded == e.sessionFramesTotal {
+                addLog(connId: e.connId, message: "DownloadProgress: \(e.sessionFramesDownloaded)/\(e.sessionFramesTotal) (\(e.transport))")
             }
         }
         else if let e = event as? HpyEvent.DownloadFrame {
@@ -514,7 +514,7 @@ final class TestAppViewModel: ObservableObject {
             }
         }
         else if let e = event as? HpyEvent.DownloadComplete {
-            addLog(connId: e.connId, message: "DownloadComplete: \(e.totalFrames) frames")
+            addLog(connId: e.connId, message: "DownloadComplete: \(e.sessionFrames) frames")
         }
         else if let e = event as? HpyEvent.FwUpdateProgress {
             let fwState = e.bytesWritten < e.totalBytes ? "Uploading" : "Finalizing"
