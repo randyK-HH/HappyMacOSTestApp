@@ -66,6 +66,7 @@ final class TestAppViewModel: ObservableObject {
 
     @Published var connectedRings = [Int32: ConnectedRingInfo]()
     @Published var connectionLogs = [Int32: [LogEntry]]()
+    @Published var faultCounts = [Int32: Int]()
     @Published var discoveredDevices = [ScannedDeviceInfo]()
     @Published var isScanning: Bool = false
 
@@ -178,6 +179,7 @@ final class TestAppViewModel: ObservableObject {
         frameWriters.removeValue(forKey: connId)?.destroy()
         fwImageInfoMap.removeValue(forKey: connId)
         fwImageBytesMap.removeValue(forKey: connId)
+        faultCounts.removeValue(forKey: connId)
         let _ = api.disconnect(connId: connId)
         connectedRings.removeValue(forKey: connId)
     }
@@ -785,6 +787,10 @@ final class TestAppViewModel: ObservableObject {
             logs.append(entry)
             if logs.count > 10000 { logs = Array(logs.suffix(10000)) }
             connectionLogs[connId] = logs
+
+            if message.hasPrefix("ERROR") {
+                faultCounts[connId, default: 0] += 1
+            }
         }
     }
 }
