@@ -107,10 +107,13 @@ final class TestAppViewModel: ObservableObject {
         self.api = api
         self.shim = shim
 
-        // Watch events
+        // Watch events — use DispatchQueue.main for strict FIFO ordering
+        // (independent Task instances are not guaranteed FIFO on MainActor)
         let eventsHandle = api.watchEvents { [weak self] event in
-            Task { @MainActor [weak self] in
-                self?.handleEvent(event)
+            DispatchQueue.main.async {
+                MainActor.assumeIsolated { [weak self] in
+                    self?.handleEvent(event)
+                }
             }
         }
         flowCollector.add(eventsHandle)
