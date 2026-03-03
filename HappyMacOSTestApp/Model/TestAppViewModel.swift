@@ -646,7 +646,7 @@ final class TestAppViewModel: ObservableObject {
                 let prev = lastLoggedRssi[e.connId]
                 let crossedBelow = prev != nil && prev! > Self.MIN_RSSI && rssi <= Self.MIN_RSSI
                 let crossedAbove = prev != nil && prev! <= Self.MIN_RSSI && rssi > Self.MIN_RSSI
-                let bigDelta = prev == nil || abs(rssi - prev!) > 5
+                let bigDelta = prev == nil || abs(rssi - prev!) >= 10
                 if crossedBelow || crossedAbove || bigDelta {
                     let suffix: String
                     if crossedBelow { suffix = " (below threshold \(Self.MIN_RSSI) dBm)" }
