@@ -69,7 +69,7 @@ struct FwUpdateSection: View {
                         .opacity(canCancel ? 1.0 : 0.4)
                 } else {
                     let canUpdate = viewModel.fwImageInfo != nil && isReady
-                    Button("Update") { viewModel.startFwUpdate(connId: connId) }
+                    Button("Update") { viewModel.requestStartFwUpdate(connId: connId) }
                         .buttonStyle(CommandButtonStyle())
                         .disabled(!canUpdate)
                         .opacity(canUpdate ? 1.0 : 0.4)

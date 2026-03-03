@@ -4,6 +4,7 @@ import HappyPlatformAPI
 struct DeviceStatusSheet: View {
     let status: DeviceStatusData
     let extendedStatus: ResponseParser.ExtendedDeviceStatus?
+    var lastRssi: Int? = nil
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -24,6 +25,7 @@ struct DeviceStatusSheet: View {
 
                     Group {
                         StatusRow("Battery", "\(status.soc)% (\(status.batteryVoltage) mV)")
+                        StatusRow("RSSI", lastRssi.map { "\($0) dBm" } ?? "—")
                         StatusRow("DAQ", status.daqString)
                         StatusRow("Unsynced Frames", "\(status.unsyncedFrames)")
                         StatusRow("Sync", status.syncString)

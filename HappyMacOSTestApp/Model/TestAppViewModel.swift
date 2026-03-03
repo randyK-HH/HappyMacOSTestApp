@@ -37,6 +37,8 @@ struct ConnectedRingInfo: Identifiable {
     var ringColor: Int = 0
     var syncFrameCount: UInt32 = 0
     var syncFrameReboots: UInt32 = 0
+    var rssiWarningValue: Int?
+    var lastRssi: Int?
 }
 
 struct LogEntry: Identifiable {
@@ -81,6 +83,15 @@ final class TestAppViewModel: ObservableObject {
     private var memfaultNextPage = 1
     private let memfaultClient = MemfaultClient()
 
+    // RSSI pre-flight check
+    static let MIN_RSSI = -80
+    private var pendingRssiAction = [Int32: String]()
+    @Published var rssiAlertConnId: Int32?
+    @Published var rssiAlertValue: Int = 0
+
+    // RSSI polling timers (10s interval per connection)
+    private var rssiPollingTasks = [Int32: Task<Void, Never>]()
+
     // Status clear timers
     private var statusClearTasks = [Int32: Task<Void, Never>]()
 
@@ -118,6 +129,7 @@ final class TestAppViewModel: ObservableObject {
 
     deinit {
         flowCollector.cancelAll()
+        rssiPollingTasks.values.forEach { $0.cancel() }
         frameWriters.values.forEach { $0.destroy() }
     }
 
@@ -142,11 +154,13 @@ final class TestAppViewModel: ObservableObject {
             address: device.address,
             state: .connecting,
             ringSize: Int(device.ringSize),
-            ringColor: Int(device.ringColor)
+            ringColor: Int(device.ringColor),
+            lastRssi: Int(device.rssi)
         )
     }
 
     func disconnect(connId: Int32) {
+        stopRssiPolling(connId: connId)
         frameWriters.removeValue(forKey: connId)?.destroy()
         let _ = api.disconnect(connId: connId)
         connectedRings.removeValue(forKey: connId)
@@ -222,7 +236,13 @@ final class TestAppViewModel: ObservableObject {
 
     // MARK: - Download
 
-    func startDownload(connId: Int32) {
+    func requestStartDownload(connId: Int32) {
+        updateRing(connId: connId) { $0.rssiWarningValue = nil }
+        pendingRssiAction[connId] = "download"
+        let _ = api.readRssi(connId: connId)
+    }
+
+    private func proceedStartDownload(connId: Int32) {
         let deviceId = connectedRings[connId]?.name
         let writer = FrameWriter()
         writer.ensureFileOpen(deviceId: deviceId)
@@ -237,12 +257,17 @@ final class TestAppViewModel: ObservableObject {
         let _ = api.startDownload(connId: connId)
     }
 
+    func startDownload(connId: Int32) {
+        proceedStartDownload(connId: connId)
+    }
+
     func stopDownload(connId: Int32) {
         let _ = api.stopDownload(connId: connId)
         if let writer = frameWriters.removeValue(forKey: connId) {
             addLog(connId: connId, message: "HPY2 file closed: \(writer.totalFramesWritten) frames written")
             writer.destroy()
         }
+        updateRing(connId: connId) { $0.rssiWarningValue = nil }
     }
 
     // MARK: - FW Update
@@ -261,10 +286,23 @@ final class TestAppViewModel: ObservableObject {
         fwImageInfo = nil
     }
 
-    func startFwUpdate(connId: Int32) {
+    func requestStartFwUpdate(connId: Int32) {
+        pendingRssiAction[connId] = "fwUpdate"
+        let _ = api.readRssi(connId: connId)
+    }
+
+    private func proceedStartFwUpdate(connId: Int32) {
         guard let bytes = fwImageBytes else { return }
         let kba = bytes.toKotlinByteArray()
         let _ = api.startFwUpdate(connId: connId, imageBytes: kba)
+    }
+
+    func startFwUpdate(connId: Int32) {
+        proceedStartFwUpdate(connId: connId)
+    }
+
+    func dismissRssiAlert() {
+        rssiAlertConnId = nil
     }
 
     func cancelFwUpdate(connId: Int32) {
@@ -420,16 +458,21 @@ final class TestAppViewModel: ObservableObject {
                 ring.isFwUpdating = (e.state == .fwUpdating || e.state == .fwUpdateRebooting)
                 if e.state == .downloading {
                     ring.batchStartMs = Date().timeIntervalSince1970 * 1000
+                    ring.rssiWarningValue = nil
                 }
                 ring.downloadState = dlState
                 if e.state == .ready { ring.fwUpdateState = nil }
                 ring.isReconnecting = reconnecting
                 ring.reconnectRetryCount = Int(e.retryCount)
             }
+            if e.state == .ready {
+                startRssiPolling(connId: e.connId)
+            }
             let retryStr = e.retryCount > 0 ? " (retry \(e.retryCount)/64)" : ""
             addLog(connId: e.connId, message: "State -> \(e.state)\(retryStr)")
 
             if e.state == .disconnected {
+                stopRssiPolling(connId: e.connId)
                 Task {
                     try? await Task.sleep(nanoseconds: 2_000_000_000)
                     connectedRings.removeValue(forKey: e.connId)
@@ -568,6 +611,34 @@ final class TestAppViewModel: ObservableObject {
             }
             addLog(connId: e.connId, message: "FW update complete: \(e.newFwVersion) (upload: \(uploadSec)s, total: \(totalSec)s)")
         }
+        else if let e = event as? HpyEvent.RssiRead {
+            updateRing(connId: e.connId) { $0.lastRssi = Int(e.rssi) }
+            let action = pendingRssiAction.removeValue(forKey: e.connId)
+            if action == "download" {
+                if e.rssi > Self.MIN_RSSI {
+                    proceedStartDownload(connId: e.connId)
+                } else {
+                    rssiAlertConnId = e.connId
+                    rssiAlertValue = Int(e.rssi)
+                }
+            } else if action == "fwUpdate" {
+                if e.rssi > Self.MIN_RSSI {
+                    proceedStartFwUpdate(connId: e.connId)
+                } else {
+                    rssiAlertConnId = e.connId
+                    rssiAlertValue = Int(e.rssi)
+                }
+            } else {
+                // From library auto-check
+                let ring = connectedRings[e.connId]
+                if ring?.state == .waiting && e.rssi <= Self.MIN_RSSI {
+                    updateRing(connId: e.connId) { $0.rssiWarningValue = Int(e.rssi) }
+                } else {
+                    updateRing(connId: e.connId) { $0.rssiWarningValue = nil }
+                }
+            }
+            addLog(connId: e.connId, message: "RSSI: \(e.rssi) dBm")
+        }
         else if let e = event as? HpyEvent.MemfaultComplete {
             addLog(connId: e.connId, message: "Memfault drain complete: \(e.chunksDownloaded) new chunks")
             let ring = connectedRings[e.connId]
@@ -600,6 +671,21 @@ final class TestAppViewModel: ObservableObject {
     }
 
     // MARK: - Helpers
+
+    private func startRssiPolling(connId: Int32) {
+        rssiPollingTasks[connId]?.cancel()
+        rssiPollingTasks[connId] = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 10_000_000_000)
+                guard !Task.isCancelled else { break }
+                let _ = self?.api.readRssi(connId: connId)
+            }
+        }
+    }
+
+    private func stopRssiPolling(connId: Int32) {
+        rssiPollingTasks.removeValue(forKey: connId)?.cancel()
+    }
 
     private func cmdHex(_ cmd: Int) -> String {
         String(format: "%02X", UInt8(cmd & 0xFF))

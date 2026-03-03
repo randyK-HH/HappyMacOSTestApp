@@ -32,7 +32,7 @@ struct RingPanel: View {
 
                     // Device Status
                     if let status = ring.lastStatus {
-                        deviceStatusSection(status: status)
+                        deviceStatusSection(status: status, lastRssi: ring.lastRssi)
                     }
 
                     // DAQ Config
@@ -57,7 +57,7 @@ struct RingPanel: View {
             }
             .sheet(isPresented: $showStatusSheet) {
                 if let status = ring.lastStatus {
-                    DeviceStatusSheet(status: status, extendedStatus: ring.extendedStatus)
+                    DeviceStatusSheet(status: status, extendedStatus: ring.extendedStatus, lastRssi: ring.lastRssi)
                         .frame(minWidth: 400, minHeight: 500)
                 }
             }
@@ -100,6 +100,14 @@ struct RingPanel: View {
                     }
                 )
                 .frame(minWidth: 300, minHeight: 200)
+            }
+            .alert("Signal Too Weak", isPresented: Binding(
+                get: { viewModel.rssiAlertConnId == connId },
+                set: { if !$0 { viewModel.dismissRssiAlert() } }
+            )) {
+                Button("OK") { viewModel.dismissRssiAlert() }
+            } message: {
+                Text("RSSI is \(viewModel.rssiAlertValue) dBm. Move the ring closer and try again.")
             }
         } else {
             Text("Ring disconnected")
@@ -191,12 +199,13 @@ struct RingPanel: View {
         }
     }
 
-    private func deviceStatusSection(status: DeviceStatusData) -> some View {
+    private func deviceStatusSection(status: DeviceStatusData, lastRssi: Int?) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             SectionHeader(title: "Device Status")
             InfoRow(label: "Physical", value: status.phyString)
             InfoRow(label: "DAQ Mode", value: status.daqString)
             InfoRow(label: "Battery", value: "\(status.soc)% (\(status.batteryVoltage)mV)")
+            InfoRow(label: "RSSI", value: lastRssi.map { "\($0) dBm" } ?? "—")
             InfoRow(label: "Unsynced Frames", value: "\(status.unsyncedFrames)")
             InfoRow(label: "Sync Position", value: status.syncString)
             InfoRow(label: "Clock Rate", value: status.clockRateString)
@@ -321,9 +330,16 @@ struct RingPanel: View {
             } else if isWaiting {
                 let sizeKb = ring.downloadProgress * 4
                 HStack {
-                    Text("Waiting for data...")
-                        .font(.caption)
-                        .foregroundColor(.orange)
+                    HStack(spacing: 0) {
+                        Text("Waiting for data...")
+                            .font(.caption)
+                            .foregroundColor(.orange)
+                        if let rssiWarn = ring.rssiWarningValue {
+                            Text("  (RSSI Low: \(rssiWarn) dBm)")
+                                .font(.caption)
+                                .foregroundColor(.red)
+                        }
+                    }
                     Spacer()
                     Text("\(ring.downloadProgress) frames (\(sizeKb)kB)")
                         .font(.caption)
@@ -337,7 +353,7 @@ struct RingPanel: View {
 
             HStack(spacing: 4) {
                 let startEnabled = canStartDownload && !isDownloading
-                Button("Start Download") { viewModel.startDownload(connId: connId) }
+                Button("Start Download") { viewModel.requestStartDownload(connId: connId) }
                     .buttonStyle(CommandButtonStyle())
                     .disabled(!startEnabled)
                     .opacity(startEnabled ? 1.0 : 0.4)
