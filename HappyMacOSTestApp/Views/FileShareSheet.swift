@@ -5,6 +5,7 @@ struct FileShareSheet: View {
     let deviceId: String
     @Environment(\.dismiss) private var dismiss
     @State private var selectedTab = 0
+    @State private var refreshCounter = 0
 
     var body: some View {
         NavigationStack {
@@ -55,6 +56,14 @@ struct FileShareSheet: View {
                                         .foregroundColor(.blue)
                                 }
                                 .buttonStyle(.plain)
+                                Button {
+                                    try? FileManager.default.removeItem(at: url)
+                                    refreshCounter += 1
+                                } label: {
+                                    Image(systemName: "trash")
+                                        .foregroundColor(.red)
+                                }
+                                .buttonStyle(.plain)
                             }
                             .contentShape(Rectangle())
                             .onTapGesture {
@@ -63,6 +72,15 @@ struct FileShareSheet: View {
                             .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                                 Button(role: .destructive) {
                                     try? FileManager.default.removeItem(at: url)
+                                    refreshCounter += 1
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                            }
+                            .contextMenu {
+                                Button(role: .destructive) {
+                                    try? FileManager.default.removeItem(at: url)
+                                    refreshCounter += 1
                                 } label: {
                                     Label("Delete", systemImage: "trash")
                                 }
@@ -70,6 +88,7 @@ struct FileShareSheet: View {
                         }
                     }
                 }
+                .id(refreshCounter)
             }
         }
     }
@@ -102,6 +121,14 @@ struct FileShareSheet: View {
                                         .foregroundColor(.blue)
                                 }
                                 .buttonStyle(.plain)
+                                Button {
+                                    try? FileManager.default.removeItem(at: url)
+                                    refreshCounter += 1
+                                } label: {
+                                    Image(systemName: "trash")
+                                        .foregroundColor(.red)
+                                }
+                                .buttonStyle(.plain)
                             }
                             .contentShape(Rectangle())
                             .onTapGesture {
@@ -110,6 +137,15 @@ struct FileShareSheet: View {
                             .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                                 Button(role: .destructive) {
                                     try? FileManager.default.removeItem(at: url)
+                                    refreshCounter += 1
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                            }
+                            .contextMenu {
+                                Button(role: .destructive) {
+                                    try? FileManager.default.removeItem(at: url)
+                                    refreshCounter += 1
                                 } label: {
                                     Label("Delete", systemImage: "trash")
                                 }
@@ -117,6 +153,7 @@ struct FileShareSheet: View {
                         }
                     }
                 }
+                .id(refreshCounter)
             }
         }
     }

@@ -88,6 +88,7 @@ struct EventLogShareSheet: View {
     @ObservedObject var viewModel: TestAppViewModel
     let deviceId: String?
     @Environment(\.dismiss) private var dismiss
+    @State private var refreshCounter = 0
 
     var body: some View {
         NavigationStack {
@@ -116,6 +117,14 @@ struct EventLogShareSheet: View {
                                         .foregroundColor(.blue)
                                 }
                                 .buttonStyle(.plain)
+                                Button {
+                                    try? FileManager.default.removeItem(at: url)
+                                    refreshCounter += 1
+                                } label: {
+                                    Image(systemName: "trash")
+                                        .foregroundColor(.red)
+                                }
+                                .buttonStyle(.plain)
                             }
                             .contentShape(Rectangle())
                             .onTapGesture {
@@ -124,6 +133,15 @@ struct EventLogShareSheet: View {
                             .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                                 Button(role: .destructive) {
                                     try? FileManager.default.removeItem(at: url)
+                                    refreshCounter += 1
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                            }
+                            .contextMenu {
+                                Button(role: .destructive) {
+                                    try? FileManager.default.removeItem(at: url)
+                                    refreshCounter += 1
                                 } label: {
                                     Label("Delete", systemImage: "trash")
                                 }
@@ -131,6 +149,7 @@ struct EventLogShareSheet: View {
                         }
                     }
                 }
+                .id(refreshCounter)
             }
 
             Spacer()
