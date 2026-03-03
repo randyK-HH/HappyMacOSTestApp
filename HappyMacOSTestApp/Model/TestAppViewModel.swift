@@ -83,6 +83,10 @@ final class TestAppViewModel: ObservableObject {
     private var memfaultNextPage = 1
     private let memfaultClient = MemfaultClient()
 
+    // Scan error message (e.g. notification subscribe timeout)
+    @Published var scanErrorMessage: String?
+    private var scanErrorClearTask: Task<Void, Never>?
+
     // RSSI pre-flight check
     static let MIN_RSSI = -80
     private var pendingRssiAction = [Int32: String]()
@@ -154,6 +158,7 @@ final class TestAppViewModel: ObservableObject {
     // MARK: - Connection
 
     func connect(device: ScannedDeviceInfo) {
+        clearScanError()
         let connId = api.connect(deviceHandle: device.deviceHandle)
         guard connId != -1 else { return }
         connectedRings[connId] = ConnectedRingInfo(
@@ -545,6 +550,10 @@ final class TestAppViewModel: ObservableObject {
                     $0.fwBlocksTotal = 0
                 }
             }
+            if e.code == .notificationSubscribeFail {
+                let deviceName = connectedRings[e.connId]?.name ?? "Unknown"
+                setScanError("Connection failed for \(deviceName): notification subscription timed out")
+            }
         }
         else if let e = event as? HpyEvent.Log {
             addLog(connId: e.connId, message: e.message)
@@ -724,6 +733,24 @@ final class TestAppViewModel: ObservableObject {
 
     private func cmdHex(_ cmd: Int) -> String {
         String(format: "%02X", UInt8(cmd & 0xFF))
+    }
+
+    private func setScanError(_ message: String) {
+        scanErrorMessage = message
+        scanErrorClearTask?.cancel()
+        scanErrorClearTask = Task {
+            try? await Task.sleep(nanoseconds: 60_000_000_000)
+            if !Task.isCancelled {
+                scanErrorMessage = nil
+                scanErrorClearTask = nil
+            }
+        }
+    }
+
+    func clearScanError() {
+        scanErrorClearTask?.cancel()
+        scanErrorClearTask = nil
+        scanErrorMessage = nil
     }
 
     private func clearCommandStatus(connId: Int32) {

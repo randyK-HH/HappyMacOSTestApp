@@ -69,6 +69,12 @@ struct ScanPanel: View {
 
                     // Discovered Devices Section
                     Section("Discovered Devices") {
+                        if let errorMsg = viewModel.scanErrorMessage {
+                            Text(errorMsg)
+                                .font(.caption)
+                                .foregroundColor(.red)
+                        }
+
                         if unconnectedDevices.isEmpty && !viewModel.isScanning {
                             Text("No devices found. Tap 'Start Scanning' to search.")
                                 .foregroundColor(.secondary)
