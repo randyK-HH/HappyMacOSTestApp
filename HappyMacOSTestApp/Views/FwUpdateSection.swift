@@ -28,10 +28,10 @@ struct FwUpdateSection: View {
             FwUpdateSectionHeader(
                 title: "FW Update",
                 fwUpdateState: ring.fwUpdateState,
-                onClear: (viewModel.fwImageInfo != nil && !isFwUpdating) ? { viewModel.clearFwImage() } : nil
+                onClear: (viewModel.fwImageInfoMap[connId] != nil && !isFwUpdating) ? { viewModel.clearFwImage(connId: connId) } : nil
             )
 
-            if let info = viewModel.fwImageInfo {
+            if let info = viewModel.fwImageInfoMap[connId] {
                 InfoRow(label: "Image", value: info.fileName)
                 InfoRow(label: "Size", value: "\(info.fileSize / 1024) KB")
             }
@@ -68,7 +68,7 @@ struct FwUpdateSection: View {
                         .disabled(!canCancel)
                         .opacity(canCancel ? 1.0 : 0.4)
                 } else {
-                    let canUpdate = viewModel.fwImageInfo != nil && isReady
+                    let canUpdate = viewModel.fwImageInfoMap[connId] != nil && isReady
                     Button("Update") { viewModel.requestStartFwUpdate(connId: connId) }
                         .buttonStyle(CommandButtonStyle())
                         .disabled(!canUpdate)
@@ -110,7 +110,7 @@ struct FwUpdateSection: View {
             if case .success(let url) = result {
                 let accessing = url.startAccessingSecurityScopedResource()
                 defer { if accessing { url.stopAccessingSecurityScopedResource() } }
-                let _ = viewModel.loadFwImage(url: url)
+                let _ = viewModel.loadFwImage(url: url, connId: connId)
             }
         }
         .sheet(isPresented: $showMemfaultSheet) {

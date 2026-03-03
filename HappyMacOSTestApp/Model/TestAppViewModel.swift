@@ -69,9 +69,9 @@ final class TestAppViewModel: ObservableObject {
     @Published var discoveredDevices = [ScannedDeviceInfo]()
     @Published var isScanning: Bool = false
 
-    // FW Update
-    @Published var fwImageInfo: FwImageInfo?
-    var fwImageBytes: Data?
+    // FW Update (per-connection)
+    @Published var fwImageInfoMap = [Int32: FwImageInfo]()
+    var fwImageBytesMap = [Int32: Data]()
 
     // Memfault
     @Published var memfaultReleases = [MemfaultRelease]()
@@ -171,6 +171,8 @@ final class TestAppViewModel: ObservableObject {
         stopRssiPolling(connId: connId)
         lastLoggedRssi.removeValue(forKey: connId)
         frameWriters.removeValue(forKey: connId)?.destroy()
+        fwImageInfoMap.removeValue(forKey: connId)
+        fwImageBytesMap.removeValue(forKey: connId)
         let _ = api.disconnect(connId: connId)
         connectedRings.removeValue(forKey: connId)
     }
@@ -282,18 +284,18 @@ final class TestAppViewModel: ObservableObject {
 
     // MARK: - FW Update
 
-    func loadFwImage(url: URL) -> String? {
+    func loadFwImage(url: URL, connId: Int32) -> String? {
         let reader = FwImageReader()
         let status = reader.readAndValidate(url: url)
         if status != .ok { return "Image validation failed: \(status)" }
-        fwImageBytes = reader.imageBytes
-        fwImageInfo = reader.imageInfo
+        fwImageBytesMap[connId] = reader.imageBytes
+        fwImageInfoMap[connId] = reader.imageInfo
         return nil
     }
 
-    func clearFwImage() {
-        fwImageBytes = nil
-        fwImageInfo = nil
+    func clearFwImage(connId: Int32) {
+        fwImageBytesMap.removeValue(forKey: connId)
+        fwImageInfoMap.removeValue(forKey: connId)
     }
 
     func requestStartFwUpdate(connId: Int32) {
@@ -302,7 +304,7 @@ final class TestAppViewModel: ObservableObject {
     }
 
     private func proceedStartFwUpdate(connId: Int32) {
-        guard let bytes = fwImageBytes else { return }
+        guard let bytes = fwImageBytesMap[connId] else { return }
         let kba = bytes.toKotlinByteArray()
         let _ = api.startFwUpdate(connId: connId, imageBytes: kba)
     }
@@ -378,8 +380,8 @@ final class TestAppViewModel: ObservableObject {
                     return
                 }
 
-                fwImageBytes = reader.imageBytes
-                fwImageInfo = reader.imageInfo
+                fwImageBytesMap[connId] = reader.imageBytes
+                fwImageInfoMap[connId] = reader.imageInfo
                 addLog(connId: connId, message: "Memfault FW image: \(reader.imageInfo?.fileName ?? "?"), version=\(reader.imageInfo?.version ?? "?"), \(reader.imageInfo?.fileSize ?? 0) bytes")
             } catch {
                 memfaultError = error.localizedDescription

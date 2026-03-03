@@ -79,7 +79,7 @@ struct MemfaultReleasesSheet: View {
                         .disabled(viewModel.memfaultDownloading)
                 }
             }
-            .onChange(of: viewModel.fwImageInfo != nil) { hasImage in
+            .onChange(of: viewModel.fwImageInfoMap[connId] != nil) { hasImage in
                 if hasImage && !viewModel.memfaultDownloading {
                     dismiss()
                 }
