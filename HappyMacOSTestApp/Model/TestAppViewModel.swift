@@ -559,7 +559,10 @@ final class TestAppViewModel: ObservableObject {
                 $0.totalFramesDownloaded = Int(e.totalFramesDownloaded)
                 $0.batchStartMs = nowMs
             }
-            addLog(connId: e.connId, message: "DownloadBatch: \(e.framesInBatch) frames, CRC=\(e.crcValid), \(throughput)")
+            let rssiStr = e.rssi != nil ? ", RSSI=\(e.rssi!.intValue)" : ""
+            let retryStr = e.retryCount > 0 ? ", retries=\(e.retryCount)" : ""
+            let ncfStr = e.ncfCount > 0 ? ", NCF=\(e.ncfCount)" : ""
+            addLog(connId: e.connId, message: "DownloadBatch: \(e.framesInBatch) frames, CRC=\(e.crcValid), \(throughput), \(e.transport)\(rssiStr)\(retryStr)\(ncfStr)")
         }
         else if let e = event as? HpyEvent.DownloadProgress {
             updateRing(connId: e.connId) {
