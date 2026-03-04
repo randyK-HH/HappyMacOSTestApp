@@ -43,8 +43,9 @@ struct EventLogSection: View {
             }
             if !summaryParts.isEmpty {
                 Text("[\(summaryParts.joined(separator: ", "))]")
-                    .font(.system(size: 11, design: .monospaced))
-                    .foregroundColor(.red)
+                    .font(.caption)
+                    .italic()
+                    .foregroundColor(.secondary)
             }
             Divider()
 

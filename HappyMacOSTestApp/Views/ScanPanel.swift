@@ -82,7 +82,7 @@ struct ScanPanel: View {
                         }
 
                         if viewModel.isScanning && unconnectedDevices.isEmpty {
-                            HStack {
+                            HStack(spacing: 6) {
                                 ProgressView()
                                     .controlSize(.small)
                                 Text("Scanning...")

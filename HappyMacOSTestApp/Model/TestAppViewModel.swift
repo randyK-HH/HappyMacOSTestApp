@@ -105,6 +105,9 @@ final class TestAppViewModel: ObservableObject {
     private var rssiPollingTasks = [Int32: Task<Void, Never>]()
     private var lastLoggedRssi = [Int32: Int]()
 
+    // Track connections that entered reconnecting (survives intermediate states)
+    private var reconnectingConnIds = Set<Int32>()
+
     // Status clear timers
     private var statusClearTasks = [Int32: Task<Void, Never>]()
 
@@ -476,8 +479,6 @@ final class TestAppViewModel: ObservableObject {
             }()
             let reconnecting = e.state == .reconnecting ||
                 (e.state == .fwUpdateRebooting && e.retryCount > 0)
-            let wasReconnecting = connectedRings[e.connId]?.isReconnecting == true
-
             updateRing(connId: e.connId) { ring in
                 ring.state = e.state
                 ring.isDownloading = (e.state == .downloading || e.state == .waiting)
@@ -491,16 +492,20 @@ final class TestAppViewModel: ObservableObject {
                 ring.isReconnecting = reconnecting
                 ring.reconnectRetryCount = Int(e.retryCount)
             }
+            if reconnecting {
+                reconnectingConnIds.insert(e.connId)
+            }
             if e.state == .ready {
                 startRssiPolling(connId: e.connId)
-            }
-            if wasReconnecting && e.state == .ready {
-                reconnectionCounts[e.connId, default: 0] += 1
+                if reconnectingConnIds.remove(e.connId) != nil {
+                    reconnectionCounts[e.connId, default: 0] += 1
+                }
             }
             let retryStr = e.retryCount > 0 ? " (retry \(e.retryCount)/64)" : ""
             addLog(connId: e.connId, message: "State -> \(e.state)\(retryStr)")
 
             if e.state == .disconnected {
+                reconnectingConnIds.remove(e.connId)
                 stopRssiPolling(connId: e.connId)
                 Task {
                     try? await Task.sleep(nanoseconds: 2_000_000_000)
