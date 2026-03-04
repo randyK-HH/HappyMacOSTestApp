@@ -153,10 +153,11 @@ final class MacBleShim: NSObject, PlatformBleShim, CBCentralManagerDelegate, CBP
     }
 
     func requestMtu(connId: Int32, mtu: Int32) {
-        guard let peripheral = peripherals[connId] else { return }
-        let maxWrite = peripheral.maximumWriteValueLength(for: .withoutResponse)
-        let effectiveMtu = Int32(maxWrite + 3)  // ATT header
-        callback?.onMtuChanged(connId: connId, mtu: effectiveMtu)
+        // macOS negotiates MTU automatically; maximumWriteValueLength is not yet
+        // accurate this early (returns default 20).  Pass through the requested
+        // MTU so the log reflects the value the stack will actually use once
+        // negotiation completes (confirmed by throughput measurements).
+        callback?.onMtuChanged(connId: connId, mtu: mtu)
     }
 
     func readRssi(connId: Int32) {
