@@ -8,9 +8,18 @@ struct EventLogSection: View {
     var body: some View {
         let logs = viewModel.connectionLogs[connId] ?? []
         let faultCount = viewModel.faultCounts[connId] ?? 0
+        let ncfCount = viewModel.ncfCounts[connId] ?? 0
+        let retryCount = viewModel.retryCounts[connId] ?? 0
+        let reconCount = viewModel.reconnectionCounts[connId] ?? 0
         let title = faultCount == 0 ? "Event Log"
             : faultCount == 1 ? "Event Log  (1 fault)"
             : "Event Log  (\(faultCount) faults)"
+        let summaryParts: [String] = [
+            faultCount > 0 ? "ERR: \(faultCount)" : nil,
+            ncfCount > 0 ? "NCF: \(ncfCount)" : nil,
+            retryCount > 0 ? "RETRY: \(retryCount)" : nil,
+            reconCount > 0 ? "RECON: \(reconCount)" : nil,
+        ].compactMap { $0 }
 
         VStack(alignment: .leading) {
             HStack {
@@ -31,6 +40,11 @@ struct EventLogSection: View {
                         .foregroundColor(.blue)
                 }
                 .buttonStyle(.plain)
+            }
+            if !summaryParts.isEmpty {
+                Text("[\(summaryParts.joined(separator: ", "))]")
+                    .font(.system(size: 11, design: .monospaced))
+                    .foregroundColor(.red)
             }
             Divider()
 

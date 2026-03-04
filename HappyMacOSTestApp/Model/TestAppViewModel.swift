@@ -67,6 +67,9 @@ final class TestAppViewModel: ObservableObject {
     @Published var connectedRings = [Int32: ConnectedRingInfo]()
     @Published var connectionLogs = [Int32: [LogEntry]]()
     @Published var faultCounts = [Int32: Int]()
+    @Published var ncfCounts = [Int32: Int]()
+    @Published var retryCounts = [Int32: Int]()
+    @Published var reconnectionCounts = [Int32: Int]()
     @Published var discoveredDevices = [ScannedDeviceInfo]()
     @Published var isScanning: Bool = false
 
@@ -180,6 +183,9 @@ final class TestAppViewModel: ObservableObject {
         fwImageInfoMap.removeValue(forKey: connId)
         fwImageBytesMap.removeValue(forKey: connId)
         faultCounts.removeValue(forKey: connId)
+        ncfCounts.removeValue(forKey: connId)
+        retryCounts.removeValue(forKey: connId)
+        reconnectionCounts.removeValue(forKey: connId)
         let _ = api.disconnect(connId: connId)
         connectedRings.removeValue(forKey: connId)
     }
@@ -470,6 +476,7 @@ final class TestAppViewModel: ObservableObject {
             }()
             let reconnecting = e.state == .reconnecting ||
                 (e.state == .fwUpdateRebooting && e.retryCount > 0)
+            let wasReconnecting = connectedRings[e.connId]?.isReconnecting == true
 
             updateRing(connId: e.connId) { ring in
                 ring.state = e.state
@@ -486,6 +493,9 @@ final class TestAppViewModel: ObservableObject {
             }
             if e.state == .ready {
                 startRssiPolling(connId: e.connId)
+            }
+            if wasReconnecting && e.state == .ready {
+                reconnectionCounts[e.connId, default: 0] += 1
             }
             let retryStr = e.retryCount > 0 ? " (retry \(e.retryCount)/64)" : ""
             addLog(connId: e.connId, message: "State -> \(e.state)\(retryStr)")
@@ -576,6 +586,8 @@ final class TestAppViewModel: ObservableObject {
             let retryStr = e.retryCount > 0 ? ", retries=\(e.retryCount)" : ""
             let ncfStr = e.ncfCount > 0 ? ", NCF=\(e.ncfCount)" : ""
             addLog(connId: e.connId, message: "DownloadBatch: \(e.framesInBatch) frames, CRC=\(e.crcValid), \(throughput), \(e.transport)\(rssiStr)\(retryStr)\(ncfStr)")
+            if e.ncfCount > 0 { ncfCounts[e.connId, default: 0] += Int(e.ncfCount) }
+            if e.retryCount > 0 { retryCounts[e.connId, default: 0] += 1 }
         }
         else if let e = event as? HpyEvent.DownloadProgress {
             updateRing(connId: e.connId) {
