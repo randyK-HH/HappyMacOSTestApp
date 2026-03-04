@@ -364,12 +364,22 @@ final class MacBleShim: NSObject, PlatformBleShim, CBCentralManagerDelegate, CBP
         lastManagerState = central.state
         log.info("Central manager state: \(central.state.rawValue)")
 
-        // When BLE restores after a power cycle (e.g. airplane mode toggle),
-        // CoreBluetooth cancels all pending connect requests.  Re-issue connect
-        // for any peripherals the reconnection loop is still tracking so the
-        // ConnectionSlot reconnect loop receives didConnect.
-        if central.state == .poweredOn && previousState == .poweredOff {
-            log.info("BLE restored after power cycle — re-issuing connect for \(self.peripherals.count) peripheral(s)")
+        // Handle BLE power-off: CoreBluetooth may NOT fire didDisconnectPeripheral
+        // when BLE is toggled off, leaving ConnectionSlot unaware of the disconnect.
+        // Explicitly notify onDisconnected to cancel stall timers and start reconnection.
+        if central.state != .poweredOn && previousState == .poweredOn && !peripherals.isEmpty {
+            log.warning("BLE powered off (state \(central.state.rawValue)) — notifying disconnect for \(self.peripherals.count) peripheral(s)")
+            for (connId, _) in peripherals {
+                characteristics.removeValue(forKey: connId)
+                l2capClose(connId: connId)
+                callback?.onDisconnected(connId: connId, status: -1)
+            }
+        }
+
+        // Handle BLE power-on: re-issue connect for any peripherals the reconnection
+        // loop is still tracking so the ConnectionSlot reconnect loop receives didConnect.
+        if central.state == .poweredOn && previousState != .poweredOn && !peripherals.isEmpty {
+            log.info("BLE restored (was state \(previousState.rawValue)) — re-issuing connect for \(self.peripherals.count) peripheral(s)")
             for (connId, peripheral) in peripherals {
                 log.info("[conn\(connId)] Re-issuing connect after BLE power restore")
                 centralManager.connect(peripheral, options: nil)
