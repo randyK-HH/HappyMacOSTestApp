@@ -78,6 +78,7 @@ final class MacBleShim: NSObject, PlatformBleShim, CBCentralManagerDelegate, CBP
     private var l2capChannels = [Int32: CBL2CAPChannel]()
     private var l2capReceiveJobs = [Int32: DispatchWorkItem]()
     private let l2capQueue = DispatchQueue(label: "com.happyhealth.l2cap", qos: .userInitiated)
+    private var lastManagerState: CBManagerState = .unknown
 
     override init() {
         super.init()
@@ -359,7 +360,21 @@ final class MacBleShim: NSObject, PlatformBleShim, CBCentralManagerDelegate, CBP
     // MARK: - CBCentralManagerDelegate
 
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
+        let previousState = lastManagerState
+        lastManagerState = central.state
         log.info("Central manager state: \(central.state.rawValue)")
+
+        // When BLE restores after a power cycle (e.g. airplane mode toggle),
+        // CoreBluetooth cancels all pending connect requests.  Re-issue connect
+        // for any peripherals the reconnection loop is still tracking so the
+        // ConnectionSlot reconnect loop receives didConnect.
+        if central.state == .poweredOn && previousState == .poweredOff {
+            log.info("BLE restored after power cycle — re-issuing connect for \(self.peripherals.count) peripheral(s)")
+            for (connId, peripheral) in peripherals {
+                log.info("[conn\(connId)] Re-issuing connect after BLE power restore")
+                centralManager.connect(peripheral, options: nil)
+            }
+        }
     }
 
     func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String: Any], rssi RSSI: NSNumber) {
