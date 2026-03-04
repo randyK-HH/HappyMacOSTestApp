@@ -195,6 +195,9 @@ final class MacBleShim: NSObject, PlatformBleShim, CBCentralManagerDelegate, CBP
             callback?.onL2capError(connId: connId, message: "L2CAP input stream is nil")
             return
         }
+        // Capture the work item locally — l2capClose() may remove it from the
+        // dictionary on the main queue while this loop is running on l2capQueue.
+        guard let workItem = l2capReceiveJobs[connId] else { return }
 
         let frameSize = 4096
         var buf0 = Data(count: frameSize)
@@ -208,7 +211,7 @@ final class MacBleShim: NSObject, PlatformBleShim, CBCentralManagerDelegate, CBP
         let readBuf = UnsafeMutablePointer<UInt8>.allocate(capacity: 512)
         defer { readBuf.deallocate() }
 
-        while !l2capReceiveJobs[connId]!.isCancelled {
+        while !workItem.isCancelled {
             let bytesRead = inputStream.read(readBuf, maxLength: 512)
             if bytesRead <= 0 { break }
 
