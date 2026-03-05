@@ -214,6 +214,13 @@ final class MacBleShim: NSObject, PlatformBleShim, CBCentralManagerDelegate, CBP
         defer { readBuf.deallocate() }
 
         while !workItem.isCancelled {
+            // Poll for available data so cancellation is checked promptly.
+            // A blocking read() on a serial queue prevents subsequent work items
+            // (e.g. a new receive loop after reconnection) from starting.
+            while !inputStream.hasBytesAvailable {
+                if workItem.isCancelled { return }
+                Thread.sleep(forTimeInterval: 0.01)
+            }
             let bytesRead = inputStream.read(readBuf, maxLength: 512)
             if bytesRead <= 0 { break }
 
