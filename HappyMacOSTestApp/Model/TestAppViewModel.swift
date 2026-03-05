@@ -66,6 +66,8 @@ final class TestAppViewModel: ObservableObject {
 
     @Published var connectedRings = [Int32: ConnectedRingInfo]()
     @Published var connectionLogs = [Int32: [LogEntry]]()
+    private var logDeviceSerial = [Int32: String]()  // connId → serial of device in log buffer
+    private var logDeviceName = [Int32: String]()     // connId → name for folder when saving
     @Published var faultCounts = [Int32: Int]()
     @Published var ncfCounts = [Int32: Int]()
     @Published var retryCounts = [Int32: Int]()
@@ -185,6 +187,8 @@ final class TestAppViewModel: ObservableObject {
         frameWriters.removeValue(forKey: connId)?.destroy()
         fwImageInfoMap.removeValue(forKey: connId)
         fwImageBytesMap.removeValue(forKey: connId)
+        logDeviceSerial.removeValue(forKey: connId)
+        logDeviceName.removeValue(forKey: connId)
         faultCounts.removeValue(forKey: connId)
         ncfCounts.removeValue(forKey: connId)
         retryCounts.removeValue(forKey: connId)
@@ -440,10 +444,15 @@ final class TestAppViewModel: ObservableObject {
     }
 
     func saveEventLog(connId: Int32) -> URL? {
+        let deviceName = connectedRings[connId]?.name ?? logDeviceName[connId]
+        return saveEventLogForDevice(connId: connId, deviceName: deviceName)
+    }
+
+    @discardableResult
+    private func saveEventLogForDevice(connId: Int32, deviceName: String?) -> URL? {
         guard let logs = connectionLogs[connId], !logs.isEmpty else { return nil }
 
-        let deviceId = connectedRings[connId]?.name
-        let folder = if let deviceId { Self.eventLogFolder.appendingPathComponent(deviceId) } else { Self.eventLogFolder }
+        let folder = if let deviceName { Self.eventLogFolder.appendingPathComponent(deviceName) } else { Self.eventLogFolder }
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
 
         let formatter = DateFormatter()
@@ -462,7 +471,7 @@ final class TestAppViewModel: ObservableObject {
         }
 
         try? text.write(to: fileUrl, atomically: true, encoding: .utf8)
-        addLog(connId: connId, message: "Event log saved: \(fileName) (\(logs.count) entries)")
+        addLog(connId: connId, message: "Event log auto-saved: \(fileName) (\(logs.count) entries)")
         return fileUrl
     }
 
@@ -514,6 +523,18 @@ final class TestAppViewModel: ObservableObject {
             }
         }
         else if let e = event as? HpyEvent.DeviceInfo {
+            // Auto-save and clear log if device changed on this slot
+            if let oldSerial = logDeviceSerial[e.connId],
+               oldSerial != e.info.serialNumber,
+               let logs = connectionLogs[e.connId], !logs.isEmpty {
+                let oldName = logDeviceName[e.connId]
+                saveEventLogForDevice(connId: e.connId, deviceName: oldName)
+                connectionLogs[e.connId] = []
+                faultCounts[e.connId] = 0
+            }
+            logDeviceSerial[e.connId] = e.info.serialNumber
+            logDeviceName[e.connId] = connectedRings[e.connId]?.name
+
             updateRing(connId: e.connId) { $0.deviceInfo = e.info }
             addLog(connId: e.connId, message: "DeviceInfo: serial=\(e.info.serialNumber), fw=\(e.info.fwVersion), model=\(e.info.modelNumber)")
         }
