@@ -23,6 +23,10 @@ struct FwUpdateSection: View {
         ring.state == .ready || ring.state == .waiting
     }
 
+    private var canFwUpdate: Bool {
+        isReady || ring.state == .connectedLimited
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             FwUpdateSectionHeader(
@@ -68,7 +72,7 @@ struct FwUpdateSection: View {
                         .disabled(!canCancel)
                         .opacity(canCancel ? 1.0 : 0.4)
                 } else {
-                    let canUpdate = viewModel.fwImageInfoMap[connId] != nil && isReady
+                    let canUpdate = viewModel.fwImageInfoMap[connId] != nil && canFwUpdate
                     Button("Update") { viewModel.requestStartFwUpdate(connId: connId) }
                         .buttonStyle(CommandButtonStyle())
                         .disabled(!canUpdate)
