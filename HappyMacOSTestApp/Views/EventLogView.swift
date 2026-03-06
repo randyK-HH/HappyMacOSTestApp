@@ -11,9 +11,6 @@ struct EventLogSection: View {
         let ncfCount = viewModel.ncfCounts[connId] ?? 0
         let retryCount = viewModel.retryCounts[connId] ?? 0
         let reconCount = viewModel.reconnectionCounts[connId] ?? 0
-        let title = faultCount == 0 ? "Event Log"
-            : faultCount == 1 ? "Event Log  (1 fault)"
-            : "Event Log  (\(faultCount) faults)"
         let summaryParts: [String] = [
             faultCount > 0 ? "ERR: \(faultCount)" : nil,
             ncfCount > 0 ? "NCF: \(ncfCount)" : nil,
@@ -23,10 +20,10 @@ struct EventLogSection: View {
 
         VStack(alignment: .leading) {
             HStack {
-                Text(title)
+                Text("Event Log")
                     .font(.subheadline)
                     .fontWeight(.bold)
-                    .foregroundColor(faultCount > 0 ? .red : .blue)
+                    .foregroundColor(faultCount > 0 || ncfCount > 0 ? .red : .blue)
                 Spacer()
                 Button {
                     let _ = viewModel.saveEventLog(connId: connId)
@@ -172,7 +169,7 @@ struct EventLogShareSheet: View {
             }
 
             Spacer()
-                .navigationTitle("Event Logs\(deviceId.map { " — \($0)" } ?? "")")
+                .navigationTitle("Event Logs\(deviceId.map { " (\($0.lowercased()))" } ?? "")")
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
                         Button("Done") { dismiss() }

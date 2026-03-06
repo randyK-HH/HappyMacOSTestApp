@@ -458,7 +458,8 @@ final class TestAppViewModel: ObservableObject {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyyMMdd_HHmmss"
         let timestamp = formatter.string(from: Date())
-        let fileName = "event_log_\(timestamp).txt"
+        let prefix = deviceName.map { "\($0.lowercased())_" } ?? ""
+        let fileName = "\(prefix)event_log_\(timestamp).txt"
         let fileUrl = folder.appendingPathComponent(fileName)
 
         let timeFormatter = DateFormatter()
