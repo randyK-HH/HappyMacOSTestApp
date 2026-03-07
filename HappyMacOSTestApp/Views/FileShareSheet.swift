@@ -18,7 +18,7 @@ struct FileShareSheet: View {
                     .tabItem { Label("Event Logs", systemImage: "list.bullet.rectangle") }
                     .tag(1)
             }
-            .navigationTitle("Files (\(deviceId.lowercased()))")
+            .navigationTitle("HPY2 Files (\(deviceId.lowercased()))")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Done") { dismiss() }
