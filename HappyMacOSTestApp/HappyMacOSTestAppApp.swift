@@ -18,7 +18,8 @@ struct HappyMacOSTestAppApp: App {
                 downloadBatchSize: 64,
                 downloadMaxRetries: 1,
                 preferL2capDownload: true,
-                minRssi: -80
+                minRssi: -80,
+                downloadStallTimeoutMs: 60000
             )
         )
         shim.callback = api.shimCallback
