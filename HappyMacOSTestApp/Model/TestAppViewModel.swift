@@ -16,8 +16,6 @@ struct ConnectedRingInfo: Identifiable {
     var isDownloading: Bool = false
     var downloadProgress: Int = 0
     var downloadTotal: Int = 0
-    var downloadProgressOffset: Int = 0
-    var downloadRawProgress: Int = 0
     var sessionDownloadProgress: Int = 0
     var sessionDownloadTotal: Int = 0
     var downloadTransport: String = ""
@@ -282,8 +280,6 @@ final class TestAppViewModel: ObservableObject {
         updateRing(connId: connId) {
             $0.downloadProgress = 0
             $0.downloadTotal = 0
-            $0.downloadProgressOffset = 0
-            $0.downloadRawProgress = 0
         }
         addLog(connId: connId, message: "HPY2 file: \(writer.filePath ?? "?")")
         let _ = api.startDownload(connId: connId)
@@ -618,14 +614,9 @@ final class TestAppViewModel: ObservableObject {
         }
         else if let e = event as? HpyEvent.DownloadProgress {
             updateRing(connId: e.connId) {
-                let rawProgress = Int(e.framesDownloaded)
-                let offset = rawProgress < $0.downloadRawProgress
-                    ? $0.downloadProgressOffset + $0.downloadRawProgress
-                    : $0.downloadProgressOffset
-                $0.downloadProgress = offset + rawProgress
-                $0.downloadTotal = offset + Int(e.framesTotal)
-                $0.downloadProgressOffset = offset
-                $0.downloadRawProgress = rawProgress
+                // framesDownloaded/framesTotal are already cumulative from the library
+                $0.downloadProgress = Int(e.framesDownloaded)
+                $0.downloadTotal = Int(e.framesTotal)
                 $0.sessionDownloadProgress = Int(e.sessionFramesDownloaded)
                 $0.sessionDownloadTotal = Int(e.sessionFramesTotal)
                 $0.downloadTransport = e.transport
