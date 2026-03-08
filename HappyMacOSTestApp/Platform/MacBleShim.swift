@@ -223,6 +223,11 @@ final class MacBleShim: NSObject, PlatformBleShim, CBCentralManagerDelegate, CBP
             }
             let bytesRead = inputStream.read(readBuf, maxLength: 512)
             if bytesRead <= 0 { break }
+            if bytesRead > 512 {
+                log.error("[conn\(connId)] L2CAP read returned \(bytesRead) bytes (max 512), aborting")
+                callback?.onL2capError(connId: connId, message: "L2CAP read overflow (\(bytesRead) bytes)")
+                return
+            }
 
             var offset = 0
             var remaining = bytesRead
@@ -233,6 +238,13 @@ final class MacBleShim: NSObject, PlatformBleShim, CBCentralManagerDelegate, CBP
                     let residualCnt = (bufState == 0) ? buf0Cnt : buf1Cnt
                     let toCopy = min(remaining, 5 - residualCnt)
                     if toCopy > 0 {
+                        let bufCnt = (bufState == 0) ? buf0Cnt : buf1Cnt
+                        let bufSize = (bufState == 0) ? buf0.count : buf1.count
+                        if bufCnt + toCopy > bufSize {
+                            log.error("[conn\(connId)] L2CAP CRC replaceSubrange out of bounds: cnt=\(bufCnt) toCopy=\(toCopy) bufSize=\(bufSize)")
+                            callback?.onL2capError(connId: connId, message: "L2CAP CRC buffer overflow")
+                            return
+                        }
                         let srcBuf = UnsafeBufferPointer(start: readBuf + offset, count: toCopy)
                         if bufState == 0 {
                             buf0.replaceSubrange(buf0Cnt..<buf0Cnt+toCopy, with: srcBuf)
@@ -260,6 +272,16 @@ final class MacBleShim: NSObject, PlatformBleShim, CBCentralManagerDelegate, CBP
                 if bufState == 0 {
                     let space = frameSize - buf0Cnt
                     let toCopy = min(remaining, space)
+                    if toCopy <= 0 {
+                        log.error("[conn\(connId)] L2CAP buf0 toCopy=\(toCopy) (space=\(space) remaining=\(remaining)), aborting")
+                        callback?.onL2capError(connId: connId, message: "L2CAP buf0 overflow")
+                        return
+                    }
+                    if buf0Cnt + toCopy > buf0.count {
+                        log.error("[conn\(connId)] L2CAP buf0 replaceSubrange out of bounds: cnt=\(buf0Cnt) toCopy=\(toCopy) bufSize=\(buf0.count)")
+                        callback?.onL2capError(connId: connId, message: "L2CAP buf0 range error")
+                        return
+                    }
                     let srcBuf = UnsafeBufferPointer(start: readBuf + offset, count: toCopy)
                     buf0.replaceSubrange(buf0Cnt..<buf0Cnt+toCopy, with: srcBuf)
                     buf0Cnt += toCopy
@@ -276,6 +298,16 @@ final class MacBleShim: NSObject, PlatformBleShim, CBCentralManagerDelegate, CBP
                 } else {
                     let space = frameSize - buf1Cnt
                     let toCopy = min(remaining, space)
+                    if toCopy <= 0 {
+                        log.error("[conn\(connId)] L2CAP buf1 toCopy=\(toCopy) (space=\(space) remaining=\(remaining)), aborting")
+                        callback?.onL2capError(connId: connId, message: "L2CAP buf1 overflow")
+                        return
+                    }
+                    if buf1Cnt + toCopy > buf1.count {
+                        log.error("[conn\(connId)] L2CAP buf1 replaceSubrange out of bounds: cnt=\(buf1Cnt) toCopy=\(toCopy) bufSize=\(buf1.count)")
+                        callback?.onL2capError(connId: connId, message: "L2CAP buf1 range error")
+                        return
+                    }
                     let srcBuf = UnsafeBufferPointer(start: readBuf + offset, count: toCopy)
                     buf1.replaceSubrange(buf1Cnt..<buf1Cnt+toCopy, with: srcBuf)
                     buf1Cnt += toCopy
@@ -606,6 +638,7 @@ private func updateCrc32(_ crcIn: UInt32, data: Data) -> UInt32 {
 }
 
 private func readUInt32LE(_ data: Data, offset: Int) -> UInt32 {
+    guard data.count >= offset + 4 else { return 0 }
     let b0 = UInt32(data[offset])
     let b1 = UInt32(data[offset + 1])
     let b2 = UInt32(data[offset + 2])
