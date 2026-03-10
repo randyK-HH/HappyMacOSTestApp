@@ -6,24 +6,18 @@ struct HappyMacOSTestAppApp: App {
     @StateObject private var viewModel: TestAppViewModel
 
     init() {
+        let repo = SettingsRepository()
+        let settings = repo.loadGlobalSettings()
         let shim = MacBleShim()
         let timeSource = MacTimeSource()
         let api = HappyPlatformApiKt.createHappyPlatformApi(
             shim: shim,
             timeSource: timeSource,
-            config: HpyConfig(
-                commandTimeoutMs: 5000,
-                skipFingerDetection: false,
-                requestedMtu: 247,
-                downloadBatchSize: 64,
-                downloadMaxRetries: 1,
-                preferL2capDownload: true,
-                minRssi: -80,
-                downloadStallTimeoutMs: 60000
-            )
+            config: settings.toHpyConfig()
         )
         shim.callback = api.shimCallback
         let vm = TestAppViewModel(api: api, shim: shim)
+        vm.globalSettings = settings
         _viewModel = StateObject(wrappedValue: vm)
     }
 

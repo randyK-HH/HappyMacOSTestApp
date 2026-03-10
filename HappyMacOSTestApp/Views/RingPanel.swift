@@ -10,6 +10,7 @@ struct RingPanel: View {
     @State private var showDaqConfigureSheet = false
     @State private var showShareSheet = false
     @State private var showAssertConfirm = false
+    @State private var showSettingsSheet = false
 
     var body: some View {
         let ring = viewModel.connectedRings[connId]
@@ -118,6 +119,14 @@ struct RingPanel: View {
             } message: {
                 Text("This will trigger a firmware assert on the ring. Continue?")
             }
+            .sheet(isPresented: $showSettingsSheet) {
+                SettingsSheet(
+                    settings: viewModel.getRingSettings(address: ring.address),
+                    isPerRing: true,
+                    onSave: { viewModel.updateRingSettings(address: ring.address, settings: $0) },
+                    onResetToGlobal: { viewModel.resetRingSettings(address: ring.address) }
+                )
+            }
         } else {
             Text("Ring disconnected")
                 .foregroundColor(.secondary)
@@ -129,6 +138,11 @@ struct RingPanel: View {
         HStack {
             stateSection(ring: ring)
             Spacer()
+            Button(action: { showSettingsSheet = true }) {
+                Image(systemName: "gearshape")
+            }
+            .buttonStyle(.plain)
+            .font(.caption)
             Button("Disconnect") {
                 viewModel.disconnect(connId: connId)
             }
@@ -138,12 +152,13 @@ struct RingPanel: View {
     }
 
     private func stateSection(ring: ConnectedRingInfo) -> some View {
+        let maxRetries = viewModel.effectiveSettings(forAddress: ring.address).maxReconnectRetries
         let stateText: String = {
             if ring.state == .reconnecting && ring.reconnectRetryCount > 0 {
-                return "\(ring.name) - RECONNECTING (\(ring.reconnectRetryCount)/64)"
+                return "\(ring.name) - RECONNECTING (\(ring.reconnectRetryCount)/\(maxRetries))"
             }
             if ring.state == .fwUpdateRebooting && ring.reconnectRetryCount > 0 {
-                return "\(ring.name) - FW_UPDATE_REBOOTING (\(ring.reconnectRetryCount)/64)"
+                return "\(ring.name) - FW_UPDATE_REBOOTING (\(ring.reconnectRetryCount)/\(maxRetries))"
             }
             return "\(ring.name) - \(ring.state)"
         }()
@@ -165,16 +180,17 @@ struct RingPanel: View {
     }
 
     private func reconnectionBanner(ring: ConnectedRingInfo) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
+        let maxRetries = viewModel.effectiveSettings(forAddress: ring.address).maxReconnectRetries
+        return VStack(alignment: .leading, spacing: 4) {
             let bannerText = ring.state == .fwUpdateRebooting
                 ? "Reconnecting after FW update..."
                 : "Connection lost. Reconnecting..."
             Text(bannerText)
                 .font(.subheadline)
                 .fontWeight(.bold)
-            Text("Attempt \(ring.reconnectRetryCount) of 64")
+            Text("Attempt \(ring.reconnectRetryCount) of \(maxRetries)")
                 .font(.caption)
-            ProgressView(value: Float(ring.reconnectRetryCount), total: 64)
+            ProgressView(value: Float(ring.reconnectRetryCount), total: Float(maxRetries))
                 .tint(.red)
         }
         .padding(12)

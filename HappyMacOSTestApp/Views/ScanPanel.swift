@@ -4,10 +4,13 @@ import HappyPlatformAPI
 struct ScanPanel: View {
     @EnvironmentObject var viewModel: TestAppViewModel
     @Binding var selectedConnId: Int32?
+    @State private var showSettingsSheet = false
+    @State private var sortTick = 0
 
     var body: some View {
         let connectedAddresses = Set(viewModel.connectedRings.values.map(\.address))
         let unconnectedDevices = viewModel.discoveredDevices.filter { !connectedAddresses.contains($0.address) }
+        let sortedDevices = unconnectedDevices.sorted { $0.rssi > $1.rssi }
 
         ZStack {
             // Watermark background
@@ -48,6 +51,11 @@ struct ScanPanel: View {
                     .buttonStyle(CommandButtonStyle())
                     .disabled(viewModel.connectedRings.isEmpty)
                     .opacity(viewModel.connectedRings.isEmpty ? 0.4 : 1.0)
+
+                    Button(action: { showSettingsSheet = true }) {
+                        Image(systemName: "gearshape")
+                    }
+                    .buttonStyle(.plain)
                 }
                 .padding(.horizontal, 8)
                 .padding(.top, 8)
@@ -75,13 +83,13 @@ struct ScanPanel: View {
                                 .foregroundColor(.red)
                         }
 
-                        if unconnectedDevices.isEmpty && !viewModel.isScanning {
+                        if sortedDevices.isEmpty && !viewModel.isScanning {
                             Text("No devices found. Tap 'Start Scanning' to search.")
                                 .foregroundColor(.secondary)
                                 .font(.caption)
                         }
 
-                        if viewModel.isScanning && unconnectedDevices.isEmpty {
+                        if viewModel.isScanning && sortedDevices.isEmpty {
                             HStack(spacing: 6) {
                                 ProgressView()
                                     .controlSize(.small)
@@ -90,7 +98,8 @@ struct ScanPanel: View {
                             }
                         }
 
-                        ForEach(unconnectedDevices, id: \.address) { device in
+                        let _ = sortTick  // trigger re-sort on tick
+                        ForEach(sortedDevices, id: \.address) { device in
                             DiscoveredDeviceRow(device: device)
                                 .contentShape(Rectangle())
                                 .onTapGesture {
@@ -102,6 +111,16 @@ struct ScanPanel: View {
                 .listStyle(.sidebar)
                 .scrollContentBackground(.hidden)
             }
+        }
+        .sheet(isPresented: $showSettingsSheet) {
+            SettingsSheet(
+                settings: viewModel.globalSettings,
+                isPerRing: false,
+                onSave: { viewModel.updateGlobalSettings($0) }
+            )
+        }
+        .onReceive(Timer.publish(every: 3, on: .main, in: .common).autoconnect()) { _ in
+            sortTick += 1
         }
     }
 }

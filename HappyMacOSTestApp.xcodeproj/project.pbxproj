@@ -27,6 +27,9 @@
 		C10000180000000000000018 /* FileShareSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000180000000000000018 /* FileShareSheet.swift */; };
 		C10000190000000000000019 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C20000190000000000000019 /* Assets.xcassets */; };
 		C10000200000000000000020 /* HappyPlatformAPI.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = C20000200000000000000020 /* HappyPlatformAPI.xcframework */; };
+		C10000250000000000000025 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000250000000000000025 /* AppSettings.swift */; };
+		C10000260000000000000026 /* SettingsRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000260000000000000026 /* SettingsRepository.swift */; };
+		C10000270000000000000027 /* SettingsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000270000000000000027 /* SettingsSheet.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -52,10 +55,13 @@
 		C20000170000000000000017 /* EventLogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventLogView.swift; sourceTree = "<group>"; };
 		C20000180000000000000018 /* FileShareSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileShareSheet.swift; sourceTree = "<group>"; };
 		C20000190000000000000019 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		C20000200000000000000020 /* HappyPlatformAPI.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = HappyPlatformAPI.xcframework; path = ../HappyPlatformAPI/shared/build/HappyPlatformAPI.xcframework; sourceTree = "<group>"; };
+		C20000200000000000000020 /* HappyPlatformAPI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = HappyPlatformAPI.framework; path = ../HappyPlatformAPI/shared/build/fat-framework/debug/HappyPlatformAPI.framework; sourceTree = "<group>"; };
 		C20000220000000000000022 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		C20000230000000000000023 /* HappyMacOSTestApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = HappyMacOSTestApp.entitlements; sourceTree = "<group>"; };
 		C20000240000000000000024 /* HappyMacOSTestApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HappyMacOSTestApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C20000250000000000000025 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
+		C20000260000000000000026 /* SettingsRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsRepository.swift; sourceTree = "<group>"; };
+		C20000270000000000000027 /* SettingsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsSheet.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -111,6 +117,8 @@
 				C20000070000000000000007 /* FrameWriter.swift */,
 				C20000080000000000000008 /* FwImageReader.swift */,
 				C20000090000000000000009 /* MemfaultClient.swift */,
+				C20000250000000000000025 /* AppSettings.swift */,
+				C20000260000000000000026 /* SettingsRepository.swift */,
 			);
 			path = Model;
 			sourceTree = "<group>";
@@ -127,6 +135,7 @@
 				C20000160000000000000016 /* MemfaultReleasesSheet.swift */,
 				C20000170000000000000017 /* EventLogView.swift */,
 				C20000180000000000000018 /* FileShareSheet.swift */,
+				C20000270000000000000027 /* SettingsSheet.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -234,6 +243,9 @@
 				C10000160000000000000016 /* MemfaultReleasesSheet.swift in Sources */,
 				C10000170000000000000017 /* EventLogView.swift in Sources */,
 				C10000180000000000000018 /* FileShareSheet.swift in Sources */,
+				C10000250000000000000025 /* AppSettings.swift in Sources */,
+				C10000260000000000000026 /* SettingsRepository.swift in Sources */,
+				C10000270000000000000027 /* SettingsSheet.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -359,7 +371,7 @@
 				ENABLE_PREVIEWS = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
-					"$(PROJECT_DIR)/../HappyPlatformAPI/shared/build",
+					"$(PROJECT_DIR)/../HappyPlatformAPI/shared/build/fat-framework/debug",
 				);
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = HappyMacOSTestApp/Info.plist;
@@ -391,7 +403,7 @@
 				ENABLE_PREVIEWS = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
-					"$(PROJECT_DIR)/../HappyPlatformAPI/shared/build",
+					"$(PROJECT_DIR)/../HappyPlatformAPI/shared/build/fat-framework/debug",
 				);
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = HappyMacOSTestApp/Info.plist;

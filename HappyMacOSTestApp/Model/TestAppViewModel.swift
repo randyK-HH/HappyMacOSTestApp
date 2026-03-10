@@ -91,8 +91,12 @@ final class TestAppViewModel: ObservableObject {
     @Published var scanErrorMessage: String?
     private var scanErrorClearTask: Task<Void, Never>?
 
+    // Settings
+    let settingsRepo = SettingsRepository()
+    @Published var globalSettings: AppSettings = .default
+    private var ringOverrides = [String: AppSettings]()  // address → overrides
+
     // RSSI pre-flight check
-    static let MIN_RSSI = -80
     private var pendingRssiAction = [Int32: String]()
     @Published var rssiAlertConnId: Int32?
     @Published var rssiAlertValue: Int = 0
@@ -110,9 +114,6 @@ final class TestAppViewModel: ObservableObject {
 
     // Status clear timers
     private var statusClearTasks = [Int32: Task<Void, Never>]()
-
-    // Track fc of first frame in current logging interval (from actual frame data)
-    private var intervalStartFc = [Int32: Int]()
 
     // Per-connection frame writers
     private var frameWriters = [Int32: FrameWriter]()
@@ -185,7 +186,6 @@ final class TestAppViewModel: ObservableObject {
     func disconnect(connId: Int32) {
         stopRssiPolling(connId: connId)
         lastLoggedRssi.removeValue(forKey: connId)
-        intervalStartFc.removeValue(forKey: connId)
         frameWriters.removeValue(forKey: connId)?.destroy()
         fwImageInfoMap.removeValue(forKey: connId)
         fwImageBytesMap.removeValue(forKey: connId)
@@ -295,7 +295,6 @@ final class TestAppViewModel: ObservableObject {
 
     func stopDownload(connId: Int32) {
         let _ = api.stopDownload(connId: connId)
-        intervalStartFc.removeValue(forKey: connId)
         if let writer = frameWriters.removeValue(forKey: connId) {
             addLog(connId: connId, message: "HPY2 file closed: \(writer.totalFramesWritten) frames written")
             writer.destroy()
@@ -512,7 +511,8 @@ final class TestAppViewModel: ObservableObject {
                     reconnectionCounts[e.connId, default: 0] += 1
                 }
             }
-            let retryStr = e.retryCount > 0 ? " (retry \(e.retryCount)/64)" : ""
+            let maxRetries = effectiveMaxRetries(connId: e.connId)
+            let retryStr = e.retryCount > 0 ? " (retry \(e.retryCount)/\(maxRetries))" : ""
             addLog(connId: e.connId, message: "State -> \(e.state)\(retryStr)")
 
             if e.state == .disconnected {
@@ -626,13 +626,8 @@ final class TestAppViewModel: ObservableObject {
                 $0.sessionDownloadTotal = Int(e.sessionFramesTotal)
                 $0.downloadTransport = e.transport
             }
-            if intervalStartFc[e.connId] == nil {
-                intervalStartFc[e.connId] = Int(e.currentFc)
-            }
             if e.sessionFramesDownloaded % 8 == 0 || e.sessionFramesDownloaded == e.sessionFramesTotal {
-                let startFc = intervalStartFc.removeValue(forKey: e.connId) ?? Int(e.currentFc)
-                let rebootFlag = Int(e.currentFc) < startFc ? " *" : ""
-                addLog(connId: e.connId, message: "DownloadProgress: \(e.sessionFramesDownloaded)/\(e.sessionFramesTotal) (\(e.transport)) (fc:\(startFc)-\(e.currentFc))\(rebootFlag)")
+                addLog(connId: e.connId, message: "DownloadProg: \(e.sessionFramesDownloaded)/\(e.sessionFramesTotal) (\(e.transport))")
             }
         }
         else if let e = event as? HpyEvent.DownloadFrame {
@@ -684,11 +679,12 @@ final class TestAppViewModel: ObservableObject {
         else if let e = event as? HpyEvent.RssiRead {
             updateRing(connId: e.connId) { $0.lastRssi = Int(e.rssi) }
             let rssi = Int(e.rssi)
+            let minRssi = effectiveMinRssi(connId: e.connId)
             let action = pendingRssiAction.removeValue(forKey: e.connId)
             if action == "download" {
                 addLog(connId: e.connId, message: "RSSI: \(rssi) dBm")
                 lastLoggedRssi[e.connId] = rssi
-                if e.rssi > Self.MIN_RSSI {
+                if e.rssi > minRssi {
                     proceedStartDownload(connId: e.connId)
                 } else {
                     rssiAlertConnId = e.connId
@@ -697,7 +693,7 @@ final class TestAppViewModel: ObservableObject {
             } else if action == "fwUpdate" {
                 addLog(connId: e.connId, message: "RSSI: \(rssi) dBm")
                 lastLoggedRssi[e.connId] = rssi
-                if e.rssi > Self.MIN_RSSI {
+                if e.rssi > minRssi {
                     proceedStartFwUpdate(connId: e.connId)
                 } else {
                     rssiAlertConnId = e.connId
@@ -706,19 +702,19 @@ final class TestAppViewModel: ObservableObject {
             } else {
                 // From library auto-check or 10s poll
                 let ring = connectedRings[e.connId]
-                if ring?.state == .waiting && e.rssi <= Self.MIN_RSSI {
+                if ring?.state == .waiting && e.rssi <= minRssi {
                     updateRing(connId: e.connId) { $0.rssiWarningValue = rssi }
                 } else {
                     updateRing(connId: e.connId) { $0.rssiWarningValue = nil }
                 }
                 let prev = lastLoggedRssi[e.connId]
-                let crossedBelow = prev != nil && prev! > Self.MIN_RSSI && rssi <= Self.MIN_RSSI
-                let crossedAbove = prev != nil && prev! <= Self.MIN_RSSI && rssi > Self.MIN_RSSI
+                let crossedBelow = prev != nil && prev! > minRssi && rssi <= minRssi
+                let crossedAbove = prev != nil && prev! <= minRssi && rssi > minRssi
                 let bigDelta = prev == nil || abs(rssi - prev!) >= 10
                 if crossedBelow || crossedAbove || bigDelta {
                     let suffix: String
-                    if crossedBelow { suffix = " (below threshold \(Self.MIN_RSSI) dBm)" }
-                    else if crossedAbove { suffix = " (above threshold \(Self.MIN_RSSI) dBm)" }
+                    if crossedBelow { suffix = " (below threshold \(minRssi) dBm)" }
+                    else if crossedAbove { suffix = " (above threshold \(minRssi) dBm)" }
                     else { suffix = "" }
                     addLog(connId: e.connId, message: "RSSI: \(rssi) dBm\(suffix)")
                     lastLoggedRssi[e.connId] = rssi
@@ -832,5 +828,52 @@ final class TestAppViewModel: ObservableObject {
                 faultCounts[connId, default: 0] += 1
             }
         }
+    }
+
+    // MARK: - Settings
+
+    func loadSettings() {
+        globalSettings = settingsRepo.loadGlobalSettings()
+    }
+
+    func updateGlobalSettings(_ settings: AppSettings) {
+        globalSettings = settings
+        settingsRepo.saveGlobalSettings(settings)
+    }
+
+    func effectiveSettings(forAddress address: String) -> AppSettings {
+        return ringOverrides[address] ?? globalSettings
+    }
+
+    func getRingSettings(address: String) -> AppSettings {
+        return settingsRepo.loadRingOverrides(address: address) ?? globalSettings
+    }
+
+    func updateRingSettings(address: String, settings: AppSettings) {
+        ringOverrides[address] = settings
+        settingsRepo.saveRingOverrides(address: address, settings: settings)
+    }
+
+    func resetRingSettings(address: String) {
+        ringOverrides.removeValue(forKey: address)
+        settingsRepo.clearRingOverrides(address: address)
+    }
+
+    func hasRingOverrides(address: String) -> Bool {
+        return settingsRepo.loadRingOverrides(address: address) != nil
+    }
+
+    private func effectiveMinRssi(connId: Int32) -> Int32 {
+        if let address = connectedRings[connId]?.address {
+            return Int32(effectiveSettings(forAddress: address).minRssi)
+        }
+        return Int32(globalSettings.minRssi)
+    }
+
+    private func effectiveMaxRetries(connId: Int32) -> Int {
+        if let address = connectedRings[connId]?.address {
+            return effectiveSettings(forAddress: address).maxReconnectRetries
+        }
+        return globalSettings.maxReconnectRetries
     }
 }
