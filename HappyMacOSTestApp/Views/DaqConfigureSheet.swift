@@ -78,105 +78,157 @@ struct DaqConfigureSheet: View {
     }
 
     var body: some View {
-        NavigationStack {
-            Form {
-                Section("General") {
-                    Toggle("Apply Immediately", isOn: $applyImmediately)
+        VStack(spacing: 0) {
+            // Title bar
+            Text("Configure DAQ")
+                .font(.headline)
+                .padding(.vertical, 10)
 
-                    Picker("Mode", selection: $mode) {
-                        ForEach(1...26, id: \.self) { m in
-                            let minBuild = modeMinBuild(m)
-                            let available = fwBuildAtLeast(fwVersion, minBuild: minBuild)
-                            Text("\(m) - \(modeName(m))")
-                                .tag("\(m)")
-                                .foregroundColor(available ? .primary : .secondary)
+            Divider()
+
+            // Scrollable content
+            ScrollView {
+                VStack(spacing: 12) {
+                    GroupBox("General") {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Toggle("Apply Immediately", isOn: $applyImmediately)
+                            Picker("DAQ Mode", selection: $mode) {
+                                ForEach(1...26, id: \.self) { m in
+                                    let minBuild = modeMinBuild(m)
+                                    let available = fwBuildAtLeast(fwVersion, minBuild: minBuild)
+                                    Text("\(m) - \(modeName(m))")
+                                        .tag("\(m)")
+                                        .foregroundColor(available ? .primary : .secondary)
+                                }
+                            }
+                            .disabled(!fwBuildAtLeast(fwVersion, minBuild: 12))
                         }
                     }
-                    .disabled(!fwBuildAtLeast(fwVersion, minBuild: 12))
-                }
 
-                Section("Ambient Light") {
-                    ConfigToggle("Enable", isOn: $ambientLightEn, enabled: fwBuildAtLeast(fwVersion, minBuild: 12))
-                    ConfigField("Period (ms)", text: $ambientLightPeriodMs, enabled: fwBuildAtLeast(fwVersion, minBuild: 12))
-                }
+                    GroupBox("Ambient Light") {
+                        VStack(alignment: .leading, spacing: 8) {
+                            ConfigToggle("Enable", isOn: $ambientLightEn, enabled: fwBuildAtLeast(fwVersion, minBuild: 12))
+                            ConfigField("Period (ms)", hint: "1000-60000", text: $ambientLightPeriodMs, enabled: fwBuildAtLeast(fwVersion, minBuild: 12))
+                        }
+                    }
 
-                Section("Temperature") {
-                    ConfigToggle("Ambient Temp Enable", isOn: $ambientTempEn, enabled: fwBuildAtLeast(fwVersion, minBuild: 12))
-                    TextField("Ambient Temp Period (tied to EDA)", text: .constant("\(config.ambientTempPeriodMs)"))
-                        .disabled(true)
-                        .foregroundColor(.secondary)
-                    ConfigToggle("Skin Temp Enable", isOn: $skinTempEn, enabled: fwBuildAtLeast(fwVersion, minBuild: 12))
-                    ConfigField("Skin Temp Period (ms)", text: $skinTempPeriodMs, enabled: fwBuildAtLeast(fwVersion, minBuild: 12))
-                }
+                    GroupBox("Temperature") {
+                        VStack(alignment: .leading, spacing: 8) {
+                            ConfigToggle("Ambient Temp Enable", isOn: $ambientTempEn, enabled: fwBuildAtLeast(fwVersion, minBuild: 12))
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Ambient Temp Period (ms)")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                                Text("Tied to EDA sampling, not configurable")
+                                    .font(.caption2)
+                                    .foregroundColor(.secondary)
+                                TextField("", text: .constant("\(config.ambientTempPeriodMs)"))
+                                    .textFieldStyle(.roundedBorder)
+                                    .disabled(true)
+                                    .opacity(0.38)
+                            }
+                            ConfigToggle("Skin Temp Enable", isOn: $skinTempEn, enabled: fwBuildAtLeast(fwVersion, minBuild: 12))
+                            ConfigField("Skin Temp Period (ms)", hint: "1000-60000", text: $skinTempPeriodMs, enabled: fwBuildAtLeast(fwVersion, minBuild: 12))
+                        }
+                    }
 
-                Section("PPG") {
-                    ConfigField("Cycle Time (ms)", text: $ppgCycleTimeMs, enabled: fwBuildAtLeast(fwVersion, minBuild: 12))
-                    ConfigField("Interval Time (ms)", text: $ppgIntervalTimeMs, enabled: fwBuildAtLeast(fwVersion, minBuild: 12))
-                    ConfigToggle("On During Sleep", isOn: $ppgOnDuringSleepEn, enabled: fwBuildAtLeast(fwVersion, minBuild: 12))
-                    ConfigField("FSR (0-5)", text: $ppgFsr, enabled: fwBuildAtLeast(fwVersion, minBuild: 16))
-                    ConfigField("Stop Config (0-255)", text: $ppgStopConfig, enabled: fwBuildAtLeast(fwVersion, minBuild: 41))
-                    ConfigField("AGC Channel Config (0-255)", text: $ppgAgcChannelConfig, enabled: fwBuildAtLeast(fwVersion, minBuild: 44))
-                }
+                    GroupBox("PPG") {
+                        VStack(alignment: .leading, spacing: 8) {
+                            ConfigField("Cycle Time (ms)", hint: "Periodic ON/OFF duration (1000-3600000)", text: $ppgCycleTimeMs, enabled: fwBuildAtLeast(fwVersion, minBuild: 12))
+                            ConfigField("Interval Time (ms)", hint: "LED on duration within cycle (1000-3600000)", text: $ppgIntervalTimeMs, enabled: fwBuildAtLeast(fwVersion, minBuild: 12))
+                            ConfigToggle("Enabled During Sleep Only (Off = Always On)", isOn: $ppgOnDuringSleepEn, enabled: fwBuildAtLeast(fwVersion, minBuild: 12))
+                            ConfigField("Full Scale Range (FSR)", hint: "0=FW Default 4K, 1=4K, 2=8K, 3=16K, 4=32K, 5=Legacy 16K \u{00B5}A", text: $ppgFsr, enabled: fwBuildAtLeast(fwVersion, minBuild: 16))
+                            ConfigField("Stop Config", hint: "Bit 7: Enable. Bits 5:0: Battery SOC% at which PPG stops (1-50%)", text: $ppgStopConfig, enabled: fwBuildAtLeast(fwVersion, minBuild: 41))
+                            ConfigField("AGC Channel Config", hint: "Per channel (bits 7:6/5:4/3:2/1:0): 00=Off, 01=On", text: $ppgAgcChannelConfig, enabled: fwBuildAtLeast(fwVersion, minBuild: 44))
+                        }
+                    }
 
-                Section("Compressed Sensing") {
-                    ConfigToggle("Enable", isOn: $compressedSensingEn, enabled: fwBuildAtLeast(fwVersion, minBuild: 12))
-                    ConfigField("CS Mode (0-3)", text: $csMode, enabled: fwBuildAtLeast(fwVersion, minBuild: 55))
-                }
+                    GroupBox("Compressed Sensing") {
+                        VStack(alignment: .leading, spacing: 8) {
+                            ConfigToggle("Enable (IR/Ambient Only)", isOn: $compressedSensingEn, enabled: fwBuildAtLeast(fwVersion, minBuild: 12))
+                            ConfigField("CS Mode", hint: "0=IR Only, 1=IR/R, 2=IR/G, 3=Reserved", text: $csMode, enabled: fwBuildAtLeast(fwVersion, minBuild: 55))
+                        }
+                    }
 
-                Section("Multi-Spectral") {
-                    ConfigToggle("Enable", isOn: $multiSpectralEn, enabled: fwBuildAtLeast(fwVersion, minBuild: 12))
-                    ConfigField("Period (ms)", text: $multiSpectralPeriodMs, enabled: fwBuildAtLeast(fwVersion, minBuild: 16))
-                }
+                    GroupBox("Multi-Spectral") {
+                        VStack(alignment: .leading, spacing: 8) {
+                            ConfigToggle("Enable", isOn: $multiSpectralEn, enabled: fwBuildAtLeast(fwVersion, minBuild: 12))
+                            ConfigField("Sample Period (ms)", hint: "0=Sample on DAQ enable only, else 10000-3600000", text: $multiSpectralPeriodMs, enabled: fwBuildAtLeast(fwVersion, minBuild: 16))
+                        }
+                    }
 
-                Section("Superframe") {
-                    ConfigField("Max Latency (ms)", text: $sfMaxLatencyMs, enabled: fwBuildAtLeast(fwVersion, minBuild: 16))
-                }
+                    GroupBox("Superframe") {
+                        VStack(alignment: .leading, spacing: 8) {
+                            ConfigField("Max Open Time (ms)", hint: "0=Disabled. Close superframe early if duration exceeds limit (2000-20000)", text: $sfMaxLatencyMs, enabled: fwBuildAtLeast(fwVersion, minBuild: 16))
+                        }
+                    }
 
-                Section("EDA Sweep") {
-                    ConfigToggle("Enable", isOn: $edaSweepEn, enabled: fwBuildAtLeast(fwVersion, minBuild: 28))
-                    ConfigField("Period (ms)", text: $edaSweepPeriodMs, enabled: fwBuildAtLeast(fwVersion, minBuild: 28))
-                    ConfigField("Param Config (0-255)", text: $edaSweepParamCfg, enabled: fwBuildAtLeast(fwVersion, minBuild: 69))
-                }
+                    GroupBox("EDA Sweep") {
+                        VStack(alignment: .leading, spacing: 8) {
+                            ConfigToggle("Enable", isOn: $edaSweepEn, enabled: fwBuildAtLeast(fwVersion, minBuild: 28))
+                            ConfigField("Period (ms)", hint: "0=Disabled, else 60000-3600000 (60s to 1hr)", text: $edaSweepPeriodMs, enabled: fwBuildAtLeast(fwVersion, minBuild: 28))
+                            ConfigField("Param Config", hint: "Bit 7: Enable optional configs. Bit 6: AGC. Bit 5: Clear AGC every Nth sweep", text: $edaSweepParamCfg, enabled: fwBuildAtLeast(fwVersion, minBuild: 69))
+                        }
+                    }
 
-                Section("Accelerometer") {
-                    ConfigField("ULP Config (0-255)", text: $accUlpEn, enabled: fwBuildAtLeast(fwVersion, minBuild: 22))
-                    ConfigToggle("2G During Sleep", isOn: $acc2gDuringSleepEn, enabled: fwBuildAtLeast(fwVersion, minBuild: 36))
-                    ConfigField("Inactivity Config (0-200)", text: $accInactivityConfig, enabled: fwBuildAtLeast(fwVersion, minBuild: 40))
-                }
+                    GroupBox("Accelerometer") {
+                        VStack(alignment: .leading, spacing: 8) {
+                            ConfigField("Ultra Low Power (ULP) Config", hint: "Bit 0: ULP enable. Bit 2: Reduced data mode during sleep", text: $accUlpEn, enabled: fwBuildAtLeast(fwVersion, minBuild: 22))
+                            ConfigToggle("Increase Resolution During Sleep (8G\u{2192}2G)", isOn: $acc2gDuringSleepEn, enabled: fwBuildAtLeast(fwVersion, minBuild: 36))
+                            ConfigField("Inactivity Config", hint: "Activity threshold for opportunistic sampling trigger (0-200)", text: $accInactivityConfig, enabled: fwBuildAtLeast(fwVersion, minBuild: 40))
+                        }
+                    }
 
-                Section("Opportunistic Sampling") {
-                    ConfigToggle("Enable", isOn: $oppSampleEn, enabled: fwBuildAtLeast(fwVersion, minBuild: 30))
-                    ConfigField("Period (ms)", text: $oppSamplePeriodMs, enabled: fwBuildAtLeast(fwVersion, minBuild: 30))
-                    ConfigField("On-Time (ms)", text: $oppSampleOnTimeMs, enabled: fwBuildAtLeast(fwVersion, minBuild: 31))
-                    ConfigField("Alt Mode (0-20)", text: $oppSampleAltMode, enabled: fwBuildAtLeast(fwVersion, minBuild: 30))
-                }
+                    GroupBox("Opportunistic Sampling") {
+                        VStack(alignment: .leading, spacing: 8) {
+                            ConfigToggle("Enable", isOn: $oppSampleEn, enabled: fwBuildAtLeast(fwVersion, minBuild: 30))
+                            ConfigField("Period (ms)", hint: "0=Default (3h). Range: 1800000-57600000 (30min to 16hr)", text: $oppSamplePeriodMs, enabled: fwBuildAtLeast(fwVersion, minBuild: 30))
+                            ConfigField("ON Time (ms)", hint: "0=Default (60s). Range: 10000-3600000 (10s to 1hr)", text: $oppSampleOnTimeMs, enabled: fwBuildAtLeast(fwVersion, minBuild: 31))
+                            ConfigField("Sampling Mode", hint: "0=Use standard DAQ mode, 3-20=Alternate PPG sampling mode", text: $oppSampleAltMode, enabled: fwBuildAtLeast(fwVersion, minBuild: 30))
+                        }
+                    }
 
-                Section("Memfault") {
-                    ConfigField("Config (0-255)", text: $memfaultConfig, enabled: fwBuildAtLeast(fwVersion, minBuild: 30))
-                }
+                    GroupBox("Memfault") {
+                        VStack(alignment: .leading, spacing: 8) {
+                            ConfigField("Memfault Access Config", hint: "Bit 7: Enable. Bits 4:3: Min log level. Bit 2: Logs. Bit 1: Events. Bit 0: Core dumps", text: $memfaultConfig, enabled: fwBuildAtLeast(fwVersion, minBuild: 30))
+                        }
+                    }
 
-                Section("Sleep") {
-                    ConfigField("Threshold Config (0-255)", text: $sleepThreshConfig, enabled: fwBuildAtLeast(fwVersion, minBuild: 45))
-                }
+                    GroupBox("Sleep") {
+                        VStack(alignment: .leading, spacing: 8) {
+                            ConfigField("Sleep Threshold Config", hint: "Bit 7: Enable. Bit 6: Direction (1=increase, 0=decrease). Bit 5: Lock on entry. Bits 3:0: Multiplier power", text: $sleepThreshConfig, enabled: fwBuildAtLeast(fwVersion, minBuild: 45))
+                        }
+                    }
 
-                Section("Reset") {
-                    ConfigField("Reset Ring Cfg (0-50)", text: $resetRingCfg, enabled: fwBuildAtLeast(fwVersion, minBuild: 60))
-                }
+                    GroupBox("Reset") {
+                        VStack(alignment: .leading, spacing: 8) {
+                            ConfigField("Reset After N Days", hint: "0=Disabled. 1-50 days. Ring must be disconnected, DAQ off, SOC \u{2265}50%", text: $resetRingCfg, enabled: fwBuildAtLeast(fwVersion, minBuild: 60))
+                        }
+                    }
 
-                Section("Daily DAQ Mode") {
-                    ConfigField("Config (0-255)", text: $dailyDaqModeCfg, enabled: fwBuildAtLeast(fwVersion, minBuild: 76))
+                    GroupBox("Daily DAQ Mode") {
+                        VStack(alignment: .leading, spacing: 8) {
+                            ConfigField("Daily DAQ Mode Config", hint: "Bit 7: Enable. Bit 6: Sample during sleep only", text: $dailyDaqModeCfg, enabled: fwBuildAtLeast(fwVersion, minBuild: 76))
+                        }
+                    }
                 }
+                .padding()
             }
-            .navigationTitle("Configure DAQ")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Update") { submitUpdate() }
-                }
+
+            Divider()
+
+            // Fixed button bar
+            HStack {
+                Button("Cancel") { dismiss() }
+                    .keyboardShortcut(.cancelAction)
+                Spacer()
+                Button("Update") { submitUpdate() }
+                    .keyboardShortcut(.defaultAction)
             }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
         }
+        .frame(width: 520, height: 650)
     }
 
     private func submitUpdate() {
@@ -248,19 +300,32 @@ private struct ConfigToggle: View {
 
 private struct ConfigField: View {
     let label: String
+    let hint: String?
     @Binding var text: String
     let enabled: Bool
 
-    init(_ label: String, text: Binding<String>, enabled: Bool) {
+    init(_ label: String, hint: String? = nil, text: Binding<String>, enabled: Bool) {
         self.label = label
+        self.hint = hint
         self._text = text
         self.enabled = enabled
     }
 
     var body: some View {
-        TextField(label, text: $text)
-            .disabled(!enabled)
-            .opacity(enabled ? 1.0 : 0.38)
+        VStack(alignment: .leading, spacing: 2) {
+            Text(label)
+                .font(.subheadline)
+                .foregroundColor(enabled ? .primary : .secondary)
+            if let hint = hint {
+                Text(hint)
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+            }
+            TextField("", text: $text)
+                .textFieldStyle(.roundedBorder)
+                .disabled(!enabled)
+                .opacity(enabled ? 1.0 : 0.38)
+        }
     }
 }
 
@@ -279,49 +344,55 @@ func fwBuildAtLeast(_ fwVersion: String?, minBuild: Int) -> Bool {
 
 private func modeMinBuild(_ mode: Int) -> Int {
     switch mode {
-    case 0: return Int.max
-    case 1...7: return 12
-    case 8...11: return 15
-    case 12...13: return 16
-    case 14...16: return 29
-    case 17...18: return 22
-    case 19...20: return 25
-    case 21: return 32
-    case 22...23: return 33
-    case 24: return 35
-    case 25...26: return 52
+    case 0: return Int.max       // All Sensors Off (not available)
+    case 1: return 12            // Nominal (No PPG)
+    case 2: return Int.max       // Nominal (No EDA, PPG) (not available)
+    case 3...7: return 12        // Nominal+PPG IR, SPO2-50/100, HR-50/100
+    case 8: return 15            // HR - 200
+    case 9...10: return 15       // IR - 200 - 1/2
+    case 11: return 15           // SPO2 - 200
+    case 12: return 16           // PTT - 100
+    case 13: return 16           // ACC - HI FREQ - LO RES
+    case 14...16: return 29      // IR-400, G-400, R-400
+    case 17...18: return 22      // ACC - Low Power 1/2
+    case 19...20: return 25      // RGBIR - 50/100
+    case 21: return 32           // PTT - 200
+    case 22...23: return 33      // ACC 52Hz - 8G/2G
+    case 24: return 35           // ACC - 104Hz - 8G
+    case 25...26: return 52      // RGBIR-100 - ACC 104Hz - 8G/2G
     default: return Int.max
     }
 }
 
 private func modeName(_ mode: Int) -> String {
     switch mode {
-    case 1: return "Default"
-    case 2: return "Blood Pressure (Reserved)"
-    case 3: return "Quick Check"
-    case 4: return "Lifestyle"
-    case 5: return "Night"
-    case 6: return "Night+QuickCheck"
-    case 7: return "Night+Lifestyle"
-    case 8: return "Quick Check V2"
-    case 9: return "Night V2"
-    case 10: return "Night V2 + Quick Check V2"
-    case 11: return "Lifestyle V2"
-    case 12: return "Quick Check V3"
-    case 13: return "Night V3"
-    case 14: return "Night V3 + QC V3"
-    case 15: return "Lifestyle V3"
-    case 16: return "Night V3 + LS V3"
-    case 17: return "Night V4"
-    case 18: return "Night V4 + QC V3"
-    case 19: return "Night V5"
-    case 20: return "Night V5 + QC V3"
-    case 21: return "Blood Pressure"
-    case 22: return "Night V6"
-    case 23: return "Night V6 + QC V3"
-    case 24: return "Night V7"
-    case 25: return "Night V8"
-    case 26: return "Night V8 + QC V3"
+    case 0: return "All Sensors Off"
+    case 1: return "Nominal (No PPG)"
+    case 2: return "Nominal (No EDA, PPG)"
+    case 3: return "Nominal + PPG IR"
+    case 4: return "SPO2 - 50"
+    case 5: return "SPO2 - 100"
+    case 6: return "HR - 50"
+    case 7: return "HR - 100"
+    case 8: return "HR - 200"
+    case 9: return "IR - 200 - 1"
+    case 10: return "IR - 200 - 2"
+    case 11: return "SPO2 - 200"
+    case 12: return "PTT - 100"
+    case 13: return "ACC - HI FREQ - LO RES"
+    case 14: return "IR - 400"
+    case 15: return "G - 400"
+    case 16: return "R - 400"
+    case 17: return "ACC - Low Power - 1"
+    case 18: return "ACC - Low Power - 2"
+    case 19: return "RGBIR - 50"
+    case 20: return "RGBIR - 100"
+    case 21: return "PTT - 200"
+    case 22: return "ACC 52Hz - 8G"
+    case 23: return "ACC 52Hz - 2G"
+    case 24: return "ACC - 104Hz - 8G"
+    case 25: return "RGBIR - 100 - ACC 104Hz - 8G"
+    case 26: return "RGBIR - 100 - ACC 104Hz - 2G"
     default: return "Unknown(\(mode))"
     }
 }

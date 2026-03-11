@@ -85,7 +85,6 @@ struct RingPanel: View {
                             showDaqConfigureSheet = false
                         }
                     )
-                    .frame(minWidth: 500, minHeight: 600)
                 }
             }
             .sheet(isPresented: $showShareSheet) {
