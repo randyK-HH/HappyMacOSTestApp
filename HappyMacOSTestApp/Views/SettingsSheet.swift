@@ -16,6 +16,7 @@ struct SettingsSheet: View {
             Form {
                 Section("Transport") {
                     Toggle("Prefer L2CAP", isOn: $settings.preferL2cap)
+                    Toggle("L2CAP Clock: 96 MHz", isOn: $settings.use96MHzClock)
                 }
 
                 Section("Scan / Connection") {

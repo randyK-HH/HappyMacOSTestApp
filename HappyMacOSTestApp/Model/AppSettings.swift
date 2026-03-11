@@ -4,6 +4,7 @@ import HappyPlatformAPI
 struct AppSettings: Codable, Equatable {
     // Transport
     var preferL2cap: Bool = true
+    var use96MHzClock: Bool = false
 
     // Scan / Connection
     var minRssi: Int = -80
@@ -44,6 +45,7 @@ struct AppSettings: Codable, Equatable {
             downloadBatchSize: Int32(batchSize),
             downloadMaxRetries: 1,
             preferL2capDownload: preferL2cap,
+            l2capClockByte: use96MHzClock ? 0x02 : 0x01,
             minRssi: Int32(minRssi),
             downloadStallTimeoutMs: Int64(stallTimeoutSec) * 1000,
             reconnectMaxAttempts: Int32(maxReconnectRetries),

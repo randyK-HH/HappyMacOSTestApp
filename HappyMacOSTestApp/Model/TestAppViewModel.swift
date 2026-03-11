@@ -185,6 +185,10 @@ final class TestAppViewModel: ObservableObject {
             ringColor: Int(device.ringColor),
             lastRssi: Int(device.rssi)
         )
+        // Apply per-ring overrides if saved
+        if let overrides = settingsRepo.loadRingOverrides(address: device.address) {
+            api.updateConnectionConfig(connId: connId, config: overrides.toHpyConfig())
+        }
     }
 
     func disconnect(connId: Int32) {
@@ -900,6 +904,7 @@ final class TestAppViewModel: ObservableObject {
     func updateGlobalSettings(_ settings: AppSettings) {
         globalSettings = settings
         settingsRepo.saveGlobalSettings(settings)
+        api.updateConfig(config: settings.toHpyConfig())
     }
 
     func effectiveSettings(forAddress address: String) -> AppSettings {
@@ -913,11 +918,17 @@ final class TestAppViewModel: ObservableObject {
     func updateRingSettings(address: String, settings: AppSettings) {
         ringOverrides[address] = settings
         settingsRepo.saveRingOverrides(address: address, settings: settings)
+        if let connId = connectedRings.first(where: { $0.value.address == address })?.key {
+            api.updateConnectionConfig(connId: connId, config: settings.toHpyConfig())
+        }
     }
 
     func resetRingSettings(address: String) {
         ringOverrides.removeValue(forKey: address)
         settingsRepo.clearRingOverrides(address: address)
+        if let connId = connectedRings.first(where: { $0.value.address == address })?.key {
+            api.updateConnectionConfig(connId: connId, config: globalSettings.toHpyConfig())
+        }
     }
 
     func hasRingOverrides(address: String) -> Bool {
