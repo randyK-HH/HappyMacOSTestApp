@@ -70,6 +70,8 @@ final class TestAppViewModel: ObservableObject {
     @Published var ncfCounts = [Int32: Int]()
     @Published var retryCounts = [Int32: Int]()
     @Published var reconnectionCounts = [Int32: Int]()
+    // Track fc of first frame in current logging interval (from actual frame data)
+    private var intervalStartFc = [Int32: Int]()
     @Published var discoveredDevices = [ScannedDeviceInfo]()
     @Published var isScanning: Bool = false
 
@@ -186,6 +188,7 @@ final class TestAppViewModel: ObservableObject {
     func disconnect(connId: Int32) {
         stopRssiPolling(connId: connId)
         lastLoggedRssi.removeValue(forKey: connId)
+        intervalStartFc.removeValue(forKey: connId)
         frameWriters.removeValue(forKey: connId)?.destroy()
         fwImageInfoMap.removeValue(forKey: connId)
         fwImageBytesMap.removeValue(forKey: connId)
@@ -295,6 +298,7 @@ final class TestAppViewModel: ObservableObject {
 
     func stopDownload(connId: Int32) {
         let _ = api.stopDownload(connId: connId)
+        intervalStartFc.removeValue(forKey: connId)
         if let writer = frameWriters.removeValue(forKey: connId) {
             addLog(connId: connId, message: "HPY2 file closed: \(writer.totalFramesWritten) frames written")
             writer.destroy()
@@ -626,8 +630,13 @@ final class TestAppViewModel: ObservableObject {
                 $0.sessionDownloadTotal = Int(e.sessionFramesTotal)
                 $0.downloadTransport = e.transport
             }
+            if intervalStartFc[e.connId] == nil {
+                intervalStartFc[e.connId] = Int(e.currentFc)
+            }
             if e.sessionFramesDownloaded % 8 == 0 || e.sessionFramesDownloaded == e.sessionFramesTotal {
-                addLog(connId: e.connId, message: "DownloadProg: \(e.sessionFramesDownloaded)/\(e.sessionFramesTotal) (\(e.transport))")
+                let startFc = intervalStartFc.removeValue(forKey: e.connId) ?? Int(e.currentFc)
+                let rebootFlag = Int(e.currentFc) < startFc ? " *" : ""
+                addLog(connId: e.connId, message: "D/L Prog: \(e.sessionFramesDownloaded)/\(e.sessionFramesTotal) (\(e.transport)) (fc:\(startFc)-\(e.currentFc))\(rebootFlag)")
             }
         }
         else if let e = event as? HpyEvent.DownloadFrame {
