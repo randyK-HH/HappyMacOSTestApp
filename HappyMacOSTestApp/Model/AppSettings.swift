@@ -27,9 +27,12 @@ struct AppSettings: Codable, Equatable {
 
     private var memfaultMinIntervalMs: Int64 {
         switch memfaultIntervalIndex {
-        case 1: return 3_600_000  // Hourly
-        case 2: return Int64.max  // Never
-        default: return 0         // Every connection
+        case 1: return 600_000      // 10 min
+        case 2: return 1_200_000    // 20 min
+        case 3: return 1_800_000    // 30 min
+        case 4: return 3_600_000    // 60 min
+        case 5: return Int64.max    // Never
+        default: return 0           // Every connection
         }
     }
 
@@ -53,14 +56,14 @@ struct AppSettings: Codable, Equatable {
     }
 
     // Memfault interval display options
-    static let memfaultIntervalOptions = ["Every connection", "Hourly", "Never"]
+    static let memfaultIntervalOptions = ["Every connection", "10 min", "20 min", "30 min", "60 min", "Never"]
 
     // Picker options
-    static let minRssiOptions = [-60, -65, -70, -75, -80, -85, -90, -95, -100]
+    static let minRssiOptions = [-60, -70, -75, -80, -85, -90, -95, -100]
     static let batchSizeOptions = [8, 16, 32, 64, 128]
-    static let stallTimeoutOptions = [30, 45, 60, 90, 120]
-    static let failsafeTimerOptions = [5, 10, 15, 21, 30, 45, 60]
-    static let maxRetriesOptions = [8, 16, 32, 64, 128, 256]
-    static let interBlockDelayOptions = [0, 10, 20, 30, 50, 100]
-    static let drainDelayOptions = [500, 1000, 1500, 2000, 3000, 5000]
+    static let stallTimeoutOptions = [15, 30, 45, 60, 90, 120]
+    static let failsafeTimerOptions = [6, 11, 16, 21, 26, 31, 41, 51, 61]
+    static let maxRetriesOptions = [8, 16, 32, 64, Int(Int32.max)]
+    static let interBlockDelayOptions = [10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60]
+    static let drainDelayOptions = [1000, 2000, 3000, 4000, 5000, 6000, 7000]
 }

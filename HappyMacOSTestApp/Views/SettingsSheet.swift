@@ -29,7 +29,7 @@ struct SettingsSheet: View {
 
                     Picker("Max Reconnect Retries", selection: $settings.maxReconnectRetries) {
                         ForEach(AppSettings.maxRetriesOptions, id: \.self) { val in
-                            Text("\(val)").tag(val)
+                            Text(val == Int(Int32.max) ? "Unlimited" : "\(val)").tag(val)
                         }
                     }
                 }
