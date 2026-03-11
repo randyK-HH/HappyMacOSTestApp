@@ -272,6 +272,16 @@ final class TestAppViewModel: ObservableObject {
         let _ = api.assert(connId: connId)
     }
 
+    func enableShipMode(connId: Int32, countdownMinutes: Int32) {
+        clearCommandStatus(connId: connId)
+        let _ = api.enableShipMode(connId: connId, countdownMinutes: countdownMinutes)
+    }
+
+    func setConnectionParams(connId: Int32, useProvidedParams: Bool, freezeDynamicCi: Bool, setClock: Bool, ciMax: Int32, ciMin: Int32, slaveLatency: Int32, clock: Int8) {
+        clearCommandStatus(connId: connId)
+        let _ = api.setConnectionParams(connId: connId, useProvidedParams: useProvidedParams, freezeDynamicCi: freezeDynamicCi, setClock: setClock, ciMax: ciMax, ciMin: ciMin, slaveLatency: slaveLatency, clock: clock)
+    }
+
     // MARK: - Download
 
     func requestStartDownload(connId: Int32) {

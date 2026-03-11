@@ -10,6 +10,8 @@ struct RingPanel: View {
     @State private var showDaqConfigureSheet = false
     @State private var showShareSheet = false
     @State private var showAssertConfirm = false
+    @State private var showConnParamsSheet = false
+    @State private var showShipModeSheet = false
     @State private var showSettingsSheet = false
 
     var body: some View {
@@ -117,6 +119,18 @@ struct RingPanel: View {
                 Button("Cancel", role: .cancel) { }
             } message: {
                 Text("This will trigger a firmware assert on the ring. Continue?")
+            }
+            .sheet(isPresented: $showShipModeSheet) {
+                ShipModeSheet(onSend: { countdown in
+                    viewModel.enableShipMode(connId: connId, countdownMinutes: Int32(countdown))
+                })
+                .frame(minWidth: 350, minHeight: 250)
+            }
+            .sheet(isPresented: $showConnParamsSheet) {
+                ConnParamsSheet(onSend: { useProvided, freezeCi, setClock, ciMax, ciMin, slaveLatency, clock in
+                    viewModel.setConnectionParams(connId: connId, useProvidedParams: useProvided, freezeDynamicCi: freezeCi, setClock: setClock, ciMax: Int32(ciMax), ciMin: Int32(ciMin), slaveLatency: Int32(slaveLatency), clock: Int8(clock))
+                })
+                .frame(minWidth: 400, minHeight: 450)
             }
             .sheet(isPresented: $showSettingsSheet) {
                 SettingsSheet(
@@ -309,6 +323,18 @@ struct RingPanel: View {
                 .opacity(isReady ? 1.0 : 0.4)
 
                 Button("Assert") { showAssertConfirm = true }
+                    .buttonStyle(CommandButtonStyle())
+                    .disabled(!isReady)
+                    .opacity(isReady ? 1.0 : 0.4)
+            }
+
+            HStack(spacing: 4) {
+                Button("Conn Params") { showConnParamsSheet = true }
+                    .buttonStyle(CommandButtonStyle())
+                    .disabled(!isReady)
+                    .opacity(isReady ? 1.0 : 0.4)
+
+                Button("Ship Mode") { showShipModeSheet = true }
                     .buttonStyle(CommandButtonStyle())
                     .disabled(!isReady)
                     .opacity(isReady ? 1.0 : 0.4)
@@ -538,5 +564,123 @@ struct DownloadSectionHeader: View {
             }
         }
         Divider()
+    }
+}
+
+struct ShipModeSheet: View {
+    let onSend: (Int) -> Void
+    @Environment(\.dismiss) private var dismiss
+    @State private var countdownText = ""
+
+    var body: some View {
+        VStack(spacing: 16) {
+            Text("Enable Ship Mode")
+                .font(.headline)
+
+            Text("Warning: Ship mode will disable the ring. The ring will drain its battery if not placed on the charger within the countdown period.")
+                .foregroundColor(.red)
+                .font(.caption)
+
+            Form {
+                TextField("Countdown Minutes", text: $countdownText)
+                Text("0 = default 20 min, 255 = disable, max 120")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+
+            HStack {
+                Spacer()
+                Button("Cancel") { dismiss() }
+                    .keyboardShortcut(.cancelAction)
+                Button("Send") {
+                    let countdown = min(max(Int(countdownText) ?? 0, 0), 255)
+                    onSend(countdown)
+                    dismiss()
+                }
+                .keyboardShortcut(.defaultAction)
+            }
+        }
+        .padding()
+    }
+}
+
+struct ConnParamsSheet: View {
+    let onSend: (Bool, Bool, Bool, Int, Int, Int, Int) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var useProvidedParams = false
+    @State private var freezeDynamicCi = false
+    @State private var setClock = false
+    @State private var ciMaxText = ""
+    @State private var ciMinText = ""
+    @State private var slaveLatencyText = ""
+    @State private var clockRate = 0  // 0=16MHz, 1=48MHz, 2=96MHz
+
+    var body: some View {
+        VStack(spacing: 16) {
+            Text("Set Connection Params")
+                .font(.headline)
+
+            Form {
+                LabeledContent {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Toggle("Use Provided Params", isOn: $useProvidedParams)
+                        Toggle("Freeze Dynamic CI", isOn: $freezeDynamicCi)
+                        Toggle("Set Clock", isOn: $setClock)
+                    }
+                } label: {
+                    Text("Flags").fontWeight(.bold)
+                }
+
+                Divider()
+
+                TextField(text: $ciMaxText) {
+                    Text("CI Max").fontWeight(.bold)
+                }
+                Text("0 = default 30ms, max 60")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+
+                TextField(text: $ciMinText) {
+                    Text("CI Min").fontWeight(.bold)
+                }
+                Text("0 = default 15ms, max 60")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+
+                TextField(text: $slaveLatencyText) {
+                    Text("Slave Latency").fontWeight(.bold)
+                }
+                Text("0 = default 30, range 0-60")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+
+                Divider()
+
+                Picker(selection: $clockRate) {
+                    Text("16 MHz").tag(0)
+                    Text("48 MHz").tag(1)
+                    Text("96 MHz").tag(2)
+                } label: {
+                    Text("Clock").fontWeight(.bold)
+                }
+                .pickerStyle(.segmented)
+            }
+
+            HStack {
+                Spacer()
+                Button("Cancel") { dismiss() }
+                    .keyboardShortcut(.cancelAction)
+                Button("Send") {
+                    let ciMax = min(max(Int(ciMaxText) ?? 0, 0), 60)
+                    let ciMin = min(max(Int(ciMinText) ?? 0, 0), 60)
+                    let sl = min(max(Int(slaveLatencyText) ?? 0, 0), 60)
+                    onSend(useProvidedParams, freezeDynamicCi, setClock, ciMax, ciMin, sl, clockRate)
+                    dismiss()
+                }
+                .keyboardShortcut(.defaultAction)
+            }
+        }
+        .padding()
     }
 }
