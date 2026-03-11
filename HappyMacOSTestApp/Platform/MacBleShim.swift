@@ -338,6 +338,91 @@ final class MacBleShim: NSObject, PlatformBleShim, CBCentralManagerDelegate, CBP
         }
     }
 
+    func l2capStartThroughputReceive(connId: Int32, expectedPackets: Int32, timeoutMs: Int64) {
+        guard let channel = l2capChannels[connId] else {
+            callback?.onL2capError(connId: connId, message: "No L2CAP channel for connId=\(connId)")
+            return
+        }
+
+        l2capReceiveJobs[connId]?.cancel()
+
+        let workItem = DispatchWorkItem { [weak self] in
+            self?.l2capThroughputReceiveLoop(connId: connId, channel: channel, expectedPackets: Int(expectedPackets), timeoutMs: Int(timeoutMs))
+        }
+        l2capReceiveJobs[connId] = workItem
+        l2capQueue.async(execute: workItem)
+    }
+
+    private func l2capThroughputReceiveLoop(connId: Int32, channel: CBL2CAPChannel, expectedPackets: Int, timeoutMs: Int) {
+        guard let inputStream = channel.inputStream else {
+            callback?.onL2capError(connId: connId, message: "L2CAP input stream is nil")
+            return
+        }
+        guard let workItem = l2capReceiveJobs[connId] else { return }
+
+        let packetSize = 245
+        var packetBuf = Data(count: packetSize)
+        var packetBufCnt = 0
+        var packetsReceived = 0
+        var firstPacketTime: Date? = nil
+        var lastPacketTime: Date? = nil
+        var lastDataTime = Date()
+
+        let readBuf = UnsafeMutablePointer<UInt8>.allocate(capacity: 512)
+        defer { readBuf.deallocate() }
+
+        while !workItem.isCancelled && packetsReceived < expectedPackets {
+            while !inputStream.hasBytesAvailable {
+                if workItem.isCancelled { return }
+                // Check inter-packet timeout
+                if Date().timeIntervalSince(lastDataTime) > Double(timeoutMs) / 1000.0 {
+                    let elapsedMs = elapsedMillis(first: firstPacketTime, last: lastPacketTime)
+                    log.warning("[conn\(connId)] Throughput timeout: \(packetsReceived)/\(expectedPackets) packets, \(elapsedMs)ms")
+                    callback?.onL2capThroughputTimeout(connId: connId, packetsReceived: Int32(packetsReceived), elapsedMs: elapsedMs)
+                    return
+                }
+                Thread.sleep(forTimeInterval: 0.01)
+            }
+
+            let bytesRead = inputStream.read(readBuf, maxLength: 512)
+            if bytesRead <= 0 { break }
+            lastDataTime = Date()
+
+            var offset = 0
+            var remaining = bytesRead
+
+            while remaining > 0 && packetsReceived < expectedPackets {
+                let space = packetSize - packetBufCnt
+                let toCopy = min(remaining, space)
+                let srcBuf = UnsafeBufferPointer(start: readBuf + offset, count: toCopy)
+                packetBuf.replaceSubrange(packetBufCnt..<packetBufCnt+toCopy, with: srcBuf)
+                packetBufCnt += toCopy
+                offset += toCopy
+                remaining -= toCopy
+
+                if packetBufCnt >= packetSize {
+                    let now = Date()
+                    if packetsReceived == 0 { firstPacketTime = now }
+                    lastPacketTime = now
+                    packetsReceived += 1
+                    packetBufCnt = 0
+                    if packetsReceived % 32 == 0 {
+                        callback?.onL2capThroughputProgress(connId: connId, packetsReceived: Int32(packetsReceived), expectedPackets: Int32(expectedPackets))
+                    }
+                }
+            }
+        }
+
+        let elapsedMs = elapsedMillis(first: firstPacketTime, last: lastPacketTime)
+        log.info("[conn\(connId)] Throughput complete: \(packetsReceived)/\(expectedPackets) packets, \(elapsedMs)ms")
+        callback?.onL2capThroughputComplete(connId: connId, packetsReceived: Int32(packetsReceived), elapsedMs: elapsedMs)
+    }
+
+    private func elapsedMillis(first: Date?, last: Date?) -> Int64 {
+        guard let f = first, let l = last else { return 0 }
+        return Int64(l.timeIntervalSince(f) * 1000.0)
+    }
+
     func l2capClose(connId: Int32) {
         l2capReceiveJobs[connId]?.cancel()
         l2capReceiveJobs.removeValue(forKey: connId)

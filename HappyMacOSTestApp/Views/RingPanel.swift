@@ -12,6 +12,7 @@ struct RingPanel: View {
     @State private var showAssertConfirm = false
     @State private var showConnParamsSheet = false
     @State private var showShipModeSheet = false
+    @State private var showThroughputSheet = false
     @State private var showSettingsSheet = false
 
     var body: some View {
@@ -43,14 +44,14 @@ struct RingPanel: View {
                         daqConfigSection(config: config)
                     }
 
-                    // Commands
-                    commandsSection(ring: ring)
+                    // Download
+                    downloadSection(ring: ring)
 
                     // FW Update
                     FwUpdateSection(connId: connId, ring: ring, showShareSheet: $showShareSheet)
 
-                    // Download
-                    downloadSection(ring: ring)
+                    // Commands
+                    commandsSection(ring: ring)
 
                     // Event Log
                     EventLogSection(connId: connId)
@@ -131,6 +132,12 @@ struct RingPanel: View {
                     viewModel.setConnectionParams(connId: connId, useProvidedParams: useProvided, freezeDynamicCi: freezeCi, setClock: setClock, ciMax: Int32(ciMax), ciMin: Int32(ciMin), slaveLatency: Int32(slaveLatency), clock: Int8(clock))
                 })
                 .frame(minWidth: 400, minHeight: 450)
+            }
+            .sheet(isPresented: $showThroughputSheet) {
+                ThroughputSheet(onStart: { numPackets in
+                    viewModel.startThroughputTest(connId: connId, numPackets: Int32(numPackets))
+                })
+                .frame(minWidth: 350, minHeight: 300)
             }
             .sheet(isPresented: $showSettingsSheet) {
                 SettingsSheet(
@@ -265,6 +272,27 @@ struct RingPanel: View {
         return VStack(alignment: .leading, spacing: 2) {
             CommandSectionHeader(title: "Commands", commandStatus: ring.commandStatus)
 
+            let isThroughputTesting = ring.state == .throughputTesting
+            if isThroughputTesting {
+                if ring.throughputTotal > 0 {
+                    ProgressView(value: Float(ring.throughputProgress), total: Float(ring.throughputTotal))
+                    let sizeKb = ring.throughputProgress * 245 / 1024
+                    HStack {
+                        Text("\(ring.throughputProgress) / \(ring.throughputTotal) packets")
+                            .font(.caption)
+                        Spacer()
+                        Text("\(sizeKb) kB")
+                            .font(.caption)
+                            .foregroundColor(.orange)
+                    }
+                } else {
+                    ProgressView()
+                        .controlSize(.small)
+                    Text("Starting throughput test...")
+                        .font(.caption)
+                }
+            }
+
             HStack(spacing: 4) {
                 Button("Dev Status") {
                     viewModel.getDeviceStatus(connId: connId)
@@ -329,16 +357,30 @@ struct RingPanel: View {
             }
 
             HStack(spacing: 4) {
+                Button("Ship Mode") { showShipModeSheet = true }
+                    .buttonStyle(CommandButtonStyle())
+                    .disabled(!isReady)
+                    .opacity(isReady ? 1.0 : 0.4)
+
+                Button("Read FGSN") { viewModel.getFgsn(connId: connId) }
+                    .buttonStyle(CommandButtonStyle())
+                    .disabled(!isReady)
+                    .opacity(isReady ? 1.0 : 0.4)
+            }
+
+            HStack(spacing: 4) {
                 Button("Conn Params") { showConnParamsSheet = true }
                     .buttonStyle(CommandButtonStyle())
                     .disabled(!isReady)
                     .opacity(isReady ? 1.0 : 0.4)
 
-                Button("Ship Mode") { showShipModeSheet = true }
+                let tpEnabled = ring.state == .ready
+                Button("Throughput") { showThroughputSheet = true }
                     .buttonStyle(CommandButtonStyle())
-                    .disabled(!isReady)
-                    .opacity(isReady ? 1.0 : 0.4)
+                    .disabled(!tpEnabled)
+                    .opacity(tpEnabled ? 1.0 : 0.4)
             }
+
         }
     }
 
@@ -348,7 +390,6 @@ struct RingPanel: View {
         let isDownloading = ring.isDownloading
         let isActivelyDownloading = ring.state == .downloading
         let isWaiting = ring.state == .waiting
-
         return VStack(alignment: .leading, spacing: 4) {
             DownloadSectionHeader(
                 title: "Download",
@@ -458,8 +499,9 @@ struct CommandSectionHeader: View {
                 .font(.subheadline)
                 .fontWeight(.bold)
                 .foregroundColor(.blue)
-            Spacer()
+                .layoutPriority(1)
             if let status = commandStatus {
+                Spacer(minLength: 8)
                 let color: Color = {
                     if status.contains("Success") { return .blue }
                     if status.contains("Timeout") { return .orange }
@@ -469,6 +511,9 @@ struct CommandSectionHeader: View {
                     .font(.caption)
                     .fontWeight(.bold)
                     .foregroundColor(color)
+                    .multilineTextAlignment(.trailing)
+            } else {
+                Spacer()
             }
         }
         Divider()
@@ -676,6 +721,48 @@ struct ConnParamsSheet: View {
                     let ciMin = min(max(Int(ciMinText) ?? 0, 0), 60)
                     let sl = min(max(Int(slaveLatencyText) ?? 0, 0), 60)
                     onSend(useProvidedParams, freezeDynamicCi, setClock, ciMax, ciMin, sl, clockRate)
+                    dismiss()
+                }
+                .keyboardShortcut(.defaultAction)
+            }
+        }
+        .padding()
+    }
+}
+
+// MARK: - Throughput Sheet
+
+private struct ThroughputSheet: View {
+    let onStart: (Int) -> Void
+    @Environment(\.dismiss) private var dismiss
+    @State private var selectedPackets = 1024
+
+    private let packetOptions = [512, 1024, 2048, 4096]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("L2CAP Throughput Test")
+                .font(.headline)
+
+            Text("Select number of packets (245 bytes each):")
+                .font(.subheadline)
+
+            ForEach(packetOptions, id: \.self) { count in
+                HStack {
+                    Image(systemName: selectedPackets == count ? "largecircle.fill.circle" : "circle")
+                        .foregroundColor(selectedPackets == count ? .accentColor : .secondary)
+                    Text("\(count) packets (\(count * 245 / 1024) kB)")
+                }
+                .contentShape(Rectangle())
+                .onTapGesture { selectedPackets = count }
+            }
+
+            HStack {
+                Spacer()
+                Button("Cancel") { dismiss() }
+                    .keyboardShortcut(.cancelAction)
+                Button("Start") {
+                    onStart(selectedPackets)
                     dismiss()
                 }
                 .keyboardShortcut(.defaultAction)

@@ -37,6 +37,8 @@ struct ConnectedRingInfo: Identifiable {
     var syncFrameReboots: UInt32 = 0
     var rssiWarningValue: Int?
     var lastRssi: Int?
+    var throughputProgress: Int = 0
+    var throughputTotal: Int = 0
 }
 
 struct LogEntry: Identifiable {
@@ -275,6 +277,17 @@ final class TestAppViewModel: ObservableObject {
     func enableShipMode(connId: Int32, countdownMinutes: Int32) {
         clearCommandStatus(connId: connId)
         let _ = api.enableShipMode(connId: connId, countdownMinutes: countdownMinutes)
+    }
+
+    func getFgsn(connId: Int32) {
+        clearCommandStatus(connId: connId)
+        let _ = api.getFgsn(connId: connId)
+    }
+
+    func startThroughputTest(connId: Int32, numPackets: Int32) {
+        clearCommandStatus(connId: connId)
+        updateRing(connId: connId) { $0.throughputProgress = 0; $0.throughputTotal = Int(numPackets) }
+        let _ = api.startThroughputTest(connId: connId, numPackets: numPackets)
     }
 
     func setConnectionParams(connId: Int32, useProvidedParams: Bool, freezeDynamicCi: Bool, setClock: Bool, ciMax: Int32, ciMin: Int32, slaveLatency: Int32, clock: Int8) {
@@ -591,8 +604,32 @@ final class TestAppViewModel: ObservableObject {
             addLog(connId: e.connId, message: "SyncFrame: boot\(e.reboots):frame\(e.frameCount)")
         }
         else if let e = event as? HpyEvent.CommandResult {
-            setCommandStatus(connId: e.connId, status: "(\(cmdHex(Int(e.commandId)))) Success")
-            addLog(connId: e.connId, message: "CMD 0x\(String(format: "%02X", UInt8(bitPattern: e.commandId))) response [\(e.rawBytes.size)b]")
+            if e.commandId == 0x22 && e.rawBytes.size > 1 {
+                // GET_FGSN response — decode bytes[1..] as UTF-8
+                var fgsnBytes = [UInt8]()
+                for i in 1..<e.rawBytes.size {
+                    fgsnBytes.append(UInt8(bitPattern: e.rawBytes.get(index: i)))
+                }
+                let fgsn = String(bytes: fgsnBytes, encoding: .utf8) ?? "?"
+                setCommandStatus(connId: e.connId, status: "FGSN: \(fgsn)")
+                addLog(connId: e.connId, message: "FGSN: \(fgsn)")
+            } else {
+                setCommandStatus(connId: e.connId, status: "(\(cmdHex(Int(e.commandId)))) Success")
+                addLog(connId: e.connId, message: "CMD 0x\(String(format: "%02X", UInt8(bitPattern: e.commandId))) response [\(e.rawBytes.size)b]")
+            }
+        }
+        else if let e = event as? HpyEvent.ThroughputResult {
+            let label = e.timedOut ? "Throughput Timeout" : "Throughput Complete"
+            let msg = "\(label): \(e.receivedPackets)/\(e.expectedPackets) packets, \(e.elapsedMs)ms, \(String(format: "%.1f", e.throughputKBps)) kB/s"
+            setCommandStatus(connId: e.connId, status: msg)
+            addLog(connId: e.connId, message: msg)
+            updateRing(connId: e.connId) { $0.throughputProgress = 0; $0.throughputTotal = 0 }
+        }
+        else if let e = event as? HpyEvent.ThroughputProgress {
+            updateRing(connId: e.connId) {
+                $0.throughputProgress = Int(e.packetsReceived)
+                $0.throughputTotal = Int(e.packetsExpected)
+            }
         }
         else if let e = event as? HpyEvent.DebugMessage {
             addLog(connId: e.connId, message: "DEBUG: \(String(data: e.message.toSwiftData(), encoding: .utf8) ?? "?")")
