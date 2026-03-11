@@ -192,8 +192,9 @@ final class TestAppViewModel: ObservableObject {
         frameWriters.removeValue(forKey: connId)?.destroy()
         fwImageInfoMap.removeValue(forKey: connId)
         fwImageBytesMap.removeValue(forKey: connId)
-        logDeviceSerial.removeValue(forKey: connId)
-        logDeviceName.removeValue(forKey: connId)
+        // NOTE: logDeviceSerial and logDeviceName are intentionally preserved across
+        // disconnect so the DeviceInfo handler can detect a device change on slot reuse
+        // and auto-save/clear the old log.
         faultCounts.removeValue(forKey: connId)
         ncfCounts.removeValue(forKey: connId)
         retryCounts.removeValue(forKey: connId)
@@ -537,6 +538,10 @@ final class TestAppViewModel: ObservableObject {
                 saveEventLogForDevice(connId: e.connId, deviceName: oldName)
                 connectionLogs[e.connId] = []
                 faultCounts[e.connId] = 0
+                ncfCounts[e.connId] = 0
+                retryCounts[e.connId] = 0
+                reconnectionCounts[e.connId] = 0
+                intervalStartFc.removeValue(forKey: e.connId)
             }
             logDeviceSerial[e.connId] = e.info.serialNumber
             logDeviceName[e.connId] = connectedRings[e.connId]?.name
