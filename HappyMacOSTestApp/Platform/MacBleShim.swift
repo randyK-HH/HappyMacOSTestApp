@@ -177,7 +177,7 @@ final class MacBleShim: NSObject, PlatformBleShim, CBCentralManagerDelegate, CBP
         peripheral.openL2CAPChannel(CBL2CAPPSM(psm))
     }
 
-    func l2capStartReceiving(connId: Int32, expectedFrames: Int32) {
+    func l2capStartReceiving(connId: Int32, expectedFrames: Int32, crcTimeoutMs: Int64) {
         guard let channel = l2capChannels[connId] else {
             callback?.onL2capError(connId: connId, message: "No L2CAP channel for connId=\(connId)")
             return
@@ -186,13 +186,13 @@ final class MacBleShim: NSObject, PlatformBleShim, CBCentralManagerDelegate, CBP
         l2capReceiveJobs[connId]?.cancel()
 
         let workItem = DispatchWorkItem { [weak self] in
-            self?.l2capReceiveLoop(connId: connId, channel: channel, expectedFrames: Int(expectedFrames))
+            self?.l2capReceiveLoop(connId: connId, channel: channel, expectedFrames: Int(expectedFrames), crcTimeoutMs: Int(crcTimeoutMs))
         }
         l2capReceiveJobs[connId] = workItem
         l2capQueue.async(execute: workItem)
     }
 
-    private func l2capReceiveLoop(connId: Int32, channel: CBL2CAPChannel, expectedFrames: Int) {
+    private func l2capReceiveLoop(connId: Int32, channel: CBL2CAPChannel, expectedFrames: Int, crcTimeoutMs: Int) {
         guard let inputStream = channel.inputStream else {
             callback?.onL2capError(connId: connId, message: "L2CAP input stream is nil")
             return
@@ -209,6 +209,7 @@ final class MacBleShim: NSObject, PlatformBleShim, CBCentralManagerDelegate, CBP
         var buf1Cnt = 0
         var framesReceived = 0
         var runningCrc: UInt32 = 0xFFFFFFFF
+        var crcWaitStart: Date? = nil
 
         let readBuf = UnsafeMutablePointer<UInt8>.allocate(capacity: 512)
         defer { readBuf.deallocate() }
@@ -219,6 +220,13 @@ final class MacBleShim: NSObject, PlatformBleShim, CBCentralManagerDelegate, CBP
             // (e.g. a new receive loop after reconnection) from starting.
             while !inputStream.hasBytesAvailable {
                 if workItem.isCancelled { return }
+                // Check CRC timeout while polling
+                if let start = crcWaitStart,
+                   Date().timeIntervalSince(start) > Double(crcTimeoutMs) / 1000.0 {
+                    log.warning("[conn\(connId)] CRC timeout after \(crcTimeoutMs)ms — \(framesReceived) frames received, no CRC packet")
+                    callback?.onL2capCrcTimeout(connId: connId, framesReceived: Int32(framesReceived))
+                    return
+                }
                 Thread.sleep(forTimeInterval: 0.01)
             }
             let bytesRead = inputStream.read(readBuf, maxLength: 512)
@@ -234,6 +242,10 @@ final class MacBleShim: NSObject, PlatformBleShim, CBCentralManagerDelegate, CBP
 
             while remaining > 0 {
                 if framesReceived >= expectedFrames {
+                    // Start CRC wait timer on first entry
+                    if crcWaitStart == nil {
+                        crcWaitStart = Date()
+                    }
                     // Accumulate CRC packet (5 bytes)
                     let residualCnt = (bufState == 0) ? buf0Cnt : buf1Cnt
                     let toCopy = min(remaining, 5 - residualCnt)

@@ -25,6 +25,14 @@ struct AppSettings: Codable, Equatable {
 
     static let `default` = AppSettings()
 
+    private var memfaultMinIntervalMs: Int64 {
+        switch memfaultIntervalIndex {
+        case 1: return 3_600_000  // Hourly
+        case 2: return Int64.max  // Never
+        default: return 0         // Every connection
+        }
+    }
+
     func toHpyConfig() -> HpyConfig {
         return HpyConfig(
             commandTimeoutMs: 5000,
@@ -33,7 +41,14 @@ struct AppSettings: Codable, Equatable {
             downloadBatchSize: Int32(batchSize),
             downloadMaxRetries: 1,
             preferL2capDownload: preferL2cap,
-            minRssi: Int32(minRssi)
+            minRssi: Int32(minRssi),
+            downloadStallTimeoutMs: Int64(stallTimeoutSec) * 1000,
+            reconnectMaxAttempts: Int32(maxReconnectRetries),
+            downloadFailsafeIntervalMs: Int64(failsafeTimerMin) * 60 * 1000,
+            memfaultMinIntervalMs: memfaultMinIntervalMs,
+            autoReconnect: autoReconnect,
+            fwStreamInterBlockDelayMs: Int64(interBlockDelayMs),
+            fwStreamDrainDelayMs: Int64(drainDelayMs)
         )
     }
 
