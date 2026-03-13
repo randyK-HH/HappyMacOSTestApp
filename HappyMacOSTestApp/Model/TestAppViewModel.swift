@@ -692,7 +692,7 @@ final class TestAppViewModel: ObservableObject {
             if e.sessionFramesDownloaded % 8 == 0 || e.sessionFramesDownloaded == e.sessionFramesTotal {
                 let startFc = intervalStartFc.removeValue(forKey: e.connId) ?? Int(e.currentFc)
                 let rebootFlag = Int(e.currentFc) < startFc ? " *" : ""
-                addLog(connId: e.connId, message: "D/L Prog: \(e.sessionFramesDownloaded)/\(e.sessionFramesTotal) (\(e.transport)) (fc:\(startFc)-\(e.currentFc))\(rebootFlag)")
+                addLog(connId: e.connId, message: "D/L: \(e.sessionFramesDownloaded)/\(e.sessionFramesTotal) (\(e.transport)) (fc:\(startFc)-\(e.currentFc))\(rebootFlag)")
             }
         }
         else if let e = event as? HpyEvent.DownloadFrame {
