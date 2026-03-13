@@ -699,12 +699,14 @@ final class TestAppViewModel: ObservableObject {
             frameWriters[e.connId]?.writeFrame(e.frameData.toSwiftData())
         }
         else if let e = event as? HpyEvent.DownloadInterrupted {
+            intervalStartFc.removeValue(forKey: e.connId)
             if let writer = frameWriters[e.connId], e.framesToDiscard > 0 {
                 writer.discardFrames(Int(e.framesToDiscard))
                 addLog(connId: e.connId, message: "Download interrupted: discarding \(e.framesToDiscard) partial-batch frames")
             }
         }
         else if let e = event as? HpyEvent.DownloadComplete {
+            intervalStartFc.removeValue(forKey: e.connId)
             addLog(connId: e.connId, message: "DownloadComplete: \(e.sessionFrames) frames")
             let cumulative = connectedRings[e.connId]?.downloadProgress ?? 0
             addLog(connId: e.connId, message: "Cumulative: \(cumulative) frames")

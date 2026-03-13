@@ -230,7 +230,16 @@ final class MacBleShim: NSObject, PlatformBleShim, CBCentralManagerDelegate, CBP
                 Thread.sleep(forTimeInterval: 0.01)
             }
             let bytesRead = inputStream.read(readBuf, maxLength: 512)
-            if bytesRead <= 0 { break }
+            if bytesRead <= 0 {
+                if framesReceived < expectedFrames {
+                    log.error("[conn\(connId)] L2CAP channel closed mid-batch (\(framesReceived)/\(expectedFrames) frames)")
+                    callback?.onL2capError(connId: connId, message: "L2CAP channel closed (\(framesReceived)/\(expectedFrames) frames received)")
+                } else {
+                    log.warning("[conn\(connId)] L2CAP channel closed during CRC wait (\(framesReceived) frames received)")
+                    callback?.onL2capCrcTimeout(connId: connId, framesReceived: Int32(framesReceived))
+                }
+                return
+            }
             if bytesRead > 512 {
                 log.error("[conn\(connId)] L2CAP read returned \(bytesRead) bytes (max 512), aborting")
                 callback?.onL2capError(connId: connId, message: "L2CAP read overflow (\(bytesRead) bytes)")
@@ -385,7 +394,15 @@ final class MacBleShim: NSObject, PlatformBleShim, CBCentralManagerDelegate, CBP
             }
 
             let bytesRead = inputStream.read(readBuf, maxLength: 512)
-            if bytesRead <= 0 { break }
+            if bytesRead <= 0 {
+                if packetsReceived < expectedPackets {
+                    let elapsedMs = elapsedMillis(first: firstPacketTime, last: lastPacketTime)
+                    log.error("[conn\(connId)] L2CAP channel closed during throughput (\(packetsReceived)/\(expectedPackets) packets, \(elapsedMs)ms)")
+                    callback?.onL2capThroughputTimeout(connId: connId, packetsReceived: Int32(packetsReceived), elapsedMs: elapsedMs)
+                    return
+                }
+                break
+            }
             lastDataTime = Date()
 
             var offset = 0
