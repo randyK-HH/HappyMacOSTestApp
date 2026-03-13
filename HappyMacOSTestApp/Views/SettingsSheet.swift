@@ -66,6 +66,8 @@ struct SettingsSheet: View {
                 }
 
                 Section("FW Update") {
+                    Toggle("FW Update: GATT", isOn: $settings.fwUpdateUseGatt)
+
                     Picker("Inter-Block Delay", selection: $settings.interBlockDelayMs) {
                         ForEach(AppSettings.interBlockDelayOptions, id: \.self) { val in
                             Text("\(val) ms").tag(val)

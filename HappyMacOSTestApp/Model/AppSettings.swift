@@ -21,6 +21,7 @@ struct AppSettings: Codable, Equatable {
     var memfaultIntervalIndex: Int = 0  // 0=Every connection, 1=Hourly, 2=Never
 
     // FW Update
+    var fwUpdateUseGatt: Bool = false
     var interBlockDelayMs: Int = 30
     var drainDelayMs: Int = 2000
 
@@ -53,7 +54,8 @@ struct AppSettings: Codable, Equatable {
             memfaultMinIntervalMs: memfaultMinIntervalMs,
             autoReconnect: autoReconnect,
             fwStreamInterBlockDelayMs: Int64(interBlockDelayMs),
-            fwStreamDrainDelayMs: Int64(drainDelayMs)
+            fwStreamDrainDelayMs: Int64(drainDelayMs),
+            fwUpdateUseGatt: fwUpdateUseGatt
         )
     }
 
