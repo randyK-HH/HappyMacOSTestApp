@@ -63,7 +63,7 @@ struct ScanPanel: View {
                 List {
                     // Connected Rings Section
                     if !viewModel.connectedRings.isEmpty {
-                        Section("Connected Rings") {
+                        Section("Connected Rings (\(viewModel.connectedRings.count))") {
                             ForEach(Array(viewModel.connectedRings.values).sorted(by: { $0.connId < $1.connId }), id: \.connId) { ring in
                                 ConnectedRingCard(ring: ring)
                                     .contentShape(Rectangle())
@@ -76,7 +76,7 @@ struct ScanPanel: View {
                     }
 
                     // Discovered Devices Section
-                    Section("Discovered Devices") {
+                    Section("Discovered Devices (\(sortedDevices.count))") {
                         if let errorMsg = viewModel.scanErrorMessage {
                             Text(errorMsg)
                                 .font(.caption)
